@@ -249,7 +249,7 @@
         </div>
     </div>
     
-    <!-- NUEVO: Modal para Agregar/Editar Empleado -->
+    <!-- Modal para Agregar/Editar Empleado -->
     <div id="add-employee-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-enter">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
             <div class="p-6 border-b">
@@ -311,6 +311,8 @@
         let USER = {
             isAuthenticated: false,
             name: 'Invitado',
+            email: '',
+            photo_url: 'https://placehold.co/112x112/CCCCCC/333333?text=USER',
             profile: 'invitado' // Valores posibles: 'admin_global', 'diseno', 'usuario', 'invitado'
         };
 
@@ -376,6 +378,7 @@
                     USER.isAuthenticated = true;
                     USER.name = result.data.name;
                     USER.profile = result.data.profile;
+                    // Los demás campos de USER se cargarán en renderProfile
                 } else {
                     // No hay sesión activa, redirigir a login, excepto si ya estamos allí (para evitar bucle)
                     if (window.location.pathname.indexOf('login.html') === -1) {
@@ -1036,6 +1039,214 @@
             slides[window.currentSlideIndex].classList.remove('opacity-0');
             slides[window.currentSlideIndex].classList.add('opacity-100');
         }
+        
+        // --- Lógica del Módulo de Perfil ---
+        
+        async function renderProfile() {
+             if (!USER.isAuthenticated) {
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Restringido</h2><p class="mt-2 text-gray-600">Debes iniciar sesión para ver tu Perfil.</p></div>`;
+                return;
+            }
+            
+            mainContent.innerHTML = `<div class="p-8 text-center text-gray-500">Cargando datos de perfil...</div>`;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}auth_handler.php?action=get_profile`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+
+                if (result.status !== 'success') throw new Error(result.message);
+                
+                const profile = result.data;
+                // Actualizar la variable USER global con datos más detallados
+                USER.name = profile.nombre;
+                USER.email = profile.email;
+                USER.profile = profile.perfil;
+                USER.photo_url = profile.foto_url || 'https://placehold.co/112x112/CCCCCC/333333?text=USER';
+
+                mainContent.innerHTML = `
+                    <div class="space-y-8">
+                        <h1 class="text-3xl font-bold text-gray-900">Mi Perfil</h1>
+                        
+                        <div class="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-xl shadow-sm">
+                            <!-- Columna de Navegación del Perfil -->
+                            <div class="md:w-1/4 border-r pr-6">
+                                <nav class="flex flex-col space-y-2">
+                                    <button onclick="showProfileTab('general')" class="profile-tab-button text-left px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-[#0b4d9a]" data-tab="general">Información General</button>
+                                    <button onclick="showProfileTab('security')" class="profile-tab-button text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" data-tab="security">Seguridad (Contraseña)</button>
+                                </nav>
+                            </div>
+
+                            <!-- Contenido del Perfil -->
+                            <div class="md:w-3/4">
+                                <!-- Pestaña 1: Información General -->
+                                <div id="profile-tab-general" class="profile-tab-content space-y-6">
+                                    <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Datos Personales</h2>
+                                    <form id="profile-general-form" onsubmit="handleProfileUpdate(event)">
+                                        <div class="flex items-center space-x-6 mb-8">
+                                            <img id="profile-photo-display" class="h-24 w-24 rounded-full object-cover border-4 border-gray-100" src="${USER.photo_url}" alt="Foto de perfil">
+                                            <div>
+                                                <p class="text-lg font-medium text-gray-900">${USER.name}</p>
+                                                <p class="text-sm text-gray-500">${USER.email}</p>
+                                                <p class="text-xs text-[#f5851f] capitalize">${USER.profile.replace('_', ' ')}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-4 max-w-md">
+                                            <div>
+                                                <label for="profile-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                                                <input type="text" id="profile-name" value="${USER.name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                                            </div>
+                                            <div>
+                                                <label for="profile-email-static" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico (No Editable)</label>
+                                                <input type="email" id="profile-email-static" value="${USER.email}" disabled class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-md shadow-sm">
+                                            </div>
+                                            <div>
+                                                <label for="profile-photo-url" class="block text-sm font-medium text-gray-700 mb-1">URL de la Foto de Perfil</label>
+                                                <input type="url" id="profile-photo-url" value="${USER.photo_url === 'https://placehold.co/112x112/CCCCCC/333333?text=USER' ? '' : USER.photo_url}" oninput="document.getElementById('profile-photo-display').src = this.value || 'https://placehold.co/112x112/CCCCCC/333333?text=USER'" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                            </div>
+                                        </div>
+                                        <div class="mt-6">
+                                            <button type="submit" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm">
+                                                Guardar Cambios
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <!-- Pestaña 2: Seguridad/Contraseña -->
+                                <div id="profile-tab-security" class="profile-tab-content space-y-6 hidden">
+                                    <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Cambio de Contraseña</h2>
+                                    <form id="profile-password-form" onsubmit="handlePasswordChange(event)">
+                                        <div class="space-y-4 max-w-md">
+                                            <div>
+                                                <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
+                                                <input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                                            </div>
+                                            <div>
+                                                <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña (Mínimo 6 caracteres)</label>
+                                                <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required minlength="6">
+                                            </div>
+                                            <div>
+                                                <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
+                                                <input type="password" id="confirm-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required minlength="6">
+                                            </div>
+                                        </div>
+                                        <div class="mt-6">
+                                            <button type="submit" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
+                                                Cambiar Contraseña
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            } catch (error) {
+                console.error("Error al cargar el perfil:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error al cargar Perfil</h3><p class="text-gray-600 mt-2">No se pudo obtener la información de tu perfil. Por favor, intenta más tarde.</p></div>`;
+            }
+        }
+        
+        /**
+         * Muestra la pestaña de perfil seleccionada.
+         */
+        function showProfileTab(tabName) {
+            document.querySelectorAll('.profile-tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+             document.querySelectorAll('.profile-tab-button').forEach(button => {
+                button.classList.remove('bg-blue-50', 'text-[#0b4d9a]');
+                button.classList.add('text-gray-700', 'hover:bg-gray-100');
+            });
+
+            document.getElementById(`profile-tab-${tabName}`).classList.remove('hidden');
+            document.querySelector(`.profile-tab-button[data-tab="${tabName}"]`).classList.add('bg-blue-50', 'text-[#0b4d9a]');
+            document.querySelector(`.profile-tab-button[data-tab="${tabName}"]`).classList.remove('text-gray-700', 'hover:bg-gray-100');
+        }
+        
+        /**
+         * Maneja la actualización de Nombre y Foto de Perfil.
+         */
+        async function handleProfileUpdate(event) {
+            event.preventDefault();
+            
+            const newName = document.getElementById('profile-name').value;
+            const newPhotoUrl = document.getElementById('profile-photo-url').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'update_profile', 
+                        name: newName, 
+                        photo_url: newPhotoUrl 
+                    })
+                });
+                
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('¡Perfil actualizado con éxito!');
+                    // Recargar UI con la nueva información
+                    USER.name = newName;
+                    USER.photo_url = newPhotoUrl || 'https://placehold.co/112x112/CCCCCC/333333?text=USER';
+                    updateUIBasedOnAuth();
+                    renderProfile(); // Renderizar perfil de nuevo para reflejar los cambios
+                } else {
+                    alert('Error al actualizar el perfil: ' + (result.message || 'Error desconocido.'));
+                }
+            } catch (error) {
+                console.error("Error en la petición de actualización de perfil:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+        
+        /**
+         * Maneja el cambio de contraseña.
+         */
+        async function handlePasswordChange(event) {
+             event.preventDefault();
+
+             const currentPassword = document.getElementById('current-password').value;
+             const newPassword = document.getElementById('new-password').value;
+             const confirmPassword = document.getElementById('confirm-password').value;
+             
+             if (newPassword !== confirmPassword) {
+                 alert('Error: La nueva contraseña y la confirmación no coinciden.');
+                 return;
+             }
+             if (newPassword.length < 6) {
+                 alert('Error: La nueva contraseña debe tener al menos 6 caracteres.');
+                 return;
+             }
+             
+             try {
+                 const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ 
+                         action: 'change_password', 
+                         current_password: currentPassword, 
+                         new_password: newPassword 
+                     })
+                 });
+                 
+                 const result = await response.json();
+
+                 if (result.status === 'success') {
+                     alert('¡Contraseña cambiada con éxito! Serás redirigido para iniciar sesión de nuevo.');
+                     logoutUser(event); // Fuerza el logout para que inicie sesión con la nueva contraseña
+                 } else {
+                     alert('Error al cambiar la contraseña: ' + (result.message || 'Error desconocido.'));
+                 }
+             } catch (error) {
+                 console.error("Error en la petición de cambio de contraseña:", error);
+                 alert('Error de conexión o servidor.');
+             }
+        }
+
 
         async function loadModule(moduleName) {
             if (moduleName === 'dashboard') {
@@ -1046,14 +1257,7 @@
                 await renderDirectorio();
             }
             else if (moduleName === 'perfil') {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm">
-                    <h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">Mi Perfil</h2>
-                    <p class="text-gray-600">Aquí podrás ver y editar tu información personal.</p>
-                    <div class="mt-4 p-4 border rounded-lg">
-                        <p><strong>Nombre:</strong> ${USER.name}</p>
-                        <p><strong>Perfil:</strong> <span class="capitalize">${USER.profile.replace('_', ' ')}</span></p>
-                    </div>
-                </div>`;
+                await renderProfile(); // Cargar la nueva función de perfil
             }
             else {
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm"><h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${moduleName.replace(/-/g, ' ')}</h2><p class="text-gray-600">El contenido del módulo '${moduleName}' se cargará aquí...</p></div>`;
