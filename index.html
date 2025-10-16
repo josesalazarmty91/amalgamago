@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -29,9 +29,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #888;
         }
-        /* Transición suave para el carrusel y el modal */
-        .carousel-item, #add-slide-modal, #add-employee-modal {
-            transition: opacity 0.5s ease-in-out;
+        /* Transición suave para el carrusel y los modales */
+        .carousel-item, .modal-transition {
+            transition: opacity 0.3s ease-in-out;
         }
         /* Ajuste para que el contenido no se oculte detrás del header fijo */
         body {
@@ -39,18 +39,21 @@
         }
         .modal-enter {
             opacity: 0;
+            transform: translateY(-20px);
         }
         .modal-enter-active {
             opacity: 1;
-            transition: opacity 300ms;
+            transform: translateY(0);
+            transition: opacity 300ms, transform 300ms;
         }
         .modal-leave-active {
             opacity: 0;
-            transition: opacity 300ms;
+            transform: translateY(-20px);
+            transition: opacity 300ms, transform 300ms;
         }
     </style>
 </head>
-<body class="h-full">
+<body class="h-full" onload="handleHashChange()">
     <div class="min-h-full">
         <!-- Barra de Navegación Superior con Branding Corporativo -->
         <header class="bg-white fixed w-full top-0 z-30 shadow-sm border-b border-gray-200 border-t-4 border-[#f5851f]">
@@ -60,7 +63,7 @@
                     <div class="flex items-center space-x-8">
                         <!-- Logo -->
                         <a href="#dashboard" class="flex-shrink-0 flex items-center space-x-2">
-                            <img src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Logo Grupo Amalgama" class="h-8 w-auto">
+                             <img class="h-8 w-auto" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
                         </a>
                         <!-- Menú para Escritorio -->
                         <nav class="hidden md:flex h-full items-center space-x-4">
@@ -82,8 +85,9 @@
                                 </button>
                             </div>
                             
-                            <!-- Enlace que será visible solo para admin_global y diseno -->
-                            <a href="#slideshow-manager" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700" data-required-profile="admin_global,diseno">Gestionar Slideshow</a>
+                            <a href="#noticias" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700">Noticias</a>
+                            <a href="#directorio" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700">Directorio</a>
+                            <a href="#slideshow-manager" id="slideshow-link" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700 hidden">Gestionar Slideshow</a>
                         </nav>
                     </div>
 
@@ -93,16 +97,16 @@
                         <div class="hidden md:block relative">
                             <button onclick="toggleMenu('user-menu')" class="bg-white p-1 rounded-full text-[#87898d] hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0b4d9a]">
                                 <span class="sr-only">Abrir menú de usuario</span>
-                                <svg class="h-8 w-8 rounded-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" /></svg>
+                                <img id="user-avatar-nav" class="h-8 w-8 rounded-full" src="https://placehold.co/100x100/A0A0A0/FFFFFF?text=P" alt="Avatar">
                             </button>
                             <div id="user-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-40">
                                 <div class="px-4 py-3">
                                     <p class="text-sm">Sesión iniciada como</p>
-                                    <p class="text-sm font-medium text-gray-900 truncate" id="user-display-name">Nombre Apellido</p>
-                                    <p class="text-xs text-gray-500 capitalize" id="user-display-profile">Perfil</p>
+                                    <p id="user-name-menu" class="text-sm font-medium text-gray-900 truncate">...</p>
+                                    <p id="user-profile-menu" class="text-xs text-[#f5851f] capitalize mt-1">...</p>
                                 </div>
                                 <a href="#perfil" class="nav-link block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
-                                <a href="#" onclick="logoutUser(event)" class="block px-4 py-2 text-sm text-gray-700 hover:bg-red-100">Cerrar Sesión</a>
+                                <button onclick="logoutUser()" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar Sesión</button>
                             </div>
                         </div>
                         <!-- Botón de Menú Móvil -->
@@ -117,8 +121,9 @@
                 </div>
             </div>
             
-            <!-- CONTENEDOR DE MEGA MENUS (sin cambios en su estructura) -->
+            <!-- CONTENEDOR DE MEGA MENUS -->
             <div class="relative">
+                <!-- Mega Menu "Nosotros" -->
                 <div id="nosotros-menu" class="hidden absolute w-full bg-white shadow-md border-t border-gray-200 z-20">
                     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-y-10 gap-x-8 px-4 py-8 sm:px-6 lg:px-8">
                         <div>
@@ -152,6 +157,7 @@
                     </div>
                 </div>
 
+                <!-- Mega Menu "Herramientas" -->
                 <div id="herramientas-menu" class="hidden absolute w-full bg-white shadow-md border-t border-gray-200 z-20">
                      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-8 px-4 py-8 sm:px-6 lg:px-8">
                         <div>
@@ -184,25 +190,24 @@
             <div id="mobile-menu" class="hidden md:hidden">
                 <div class="pt-2 pb-3 space-y-1">
                     <a href="#dashboard" class="nav-link block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
-                    <a href="#cultura" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Cultura</a>
+                    <a href="#noticias" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Noticias</a>
                     <a href="#directorio" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Directorio</a>
-                    <!-- Enlace que será visible solo para admin_global y diseno -->
-                    <a href="#slideshow-manager" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800" data-required-profile="admin_global,diseno">Gestionar Slideshow</a>
+                    <a href="#slideshow-manager" id="slideshow-link-mobile" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hidden">Gestionar Slideshow</a>
                 </div>
                 <!-- Menú de usuario en móvil -->
                 <div class="pt-4 pb-3 border-t border-gray-200">
                     <div class="flex items-center px-4">
                         <div class="flex-shrink-0">
-                             <svg class="h-10 w-10 rounded-full text-[#87898d]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" /></svg>
+                             <img id="user-avatar-mobile" class="h-10 w-10 rounded-full" src="https://placehold.co/100x100/A0A0A0/FFFFFF?text=P" alt="Avatar">
                         </div>
                         <div class="ml-3">
-                            <div class="text-base font-medium text-gray-800" id="mobile-user-display-name">Nombre Apellido</div>
-                            <div class="text-sm font-medium text-[#87898d]" id="mobile-user-display-profile">Perfil</div>
+                            <div id="user-name-mobile" class="text-base font-medium text-gray-800">...</div>
+                            <div id="user-email-mobile" class="text-sm font-medium text-[#87898d]">...</div>
                         </div>
                     </div>
                     <div class="mt-3 space-y-1">
                         <a href="#perfil" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Mi Perfil</a>
-                        <a href="#" onclick="logoutUser(event)" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-red-100">Cerrar Sesión</a>
+                        <button onclick="logoutUser()" class="w-full text-left block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
@@ -214,15 +219,16 @@
         </main>
     </div>
 
-    <!-- Modal para Agregar/Editar Slide (Solo visible para admin_global y diseno) -->
-    <div id="add-slide-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-enter">
+    <!-- Modales -->
+
+    <!-- Modal para Agregar/Editar Slide -->
+    <div id="add-slide-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-transition modal-enter">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-semibold text-gray-800" id="modal-title">Agregar Nuevo Slide</h3>
             </div>
             <form id="add-slide-form">
-                <!-- CAMPO PARA EL ID DE LA BASE DE DATOS -->
-                <input type="hidden" id="slide-edit-id" name="slide-edit-id"> 
+                <input type="hidden" id="slide-edit-id" name="slide-edit-id">
                 <div class="p-6 space-y-4">
                     <div>
                         <label for="slide-title" class="block text-sm font-medium text-gray-700 mb-1">Título</label>
@@ -248,57 +254,93 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Modal para Agregar/Editar Empleado -->
-    <div id="add-employee-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-enter">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+    <div id="add-employee-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-transition modal-enter">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-semibold text-gray-800" id="employee-modal-title">Agregar Nuevo Empleado</h3>
             </div>
             <form id="add-employee-form">
-                <input type="hidden" id="employee-edit-id" name="employee-edit-id"> 
-                <div class="p-6 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="employee-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                            <input type="text" id="employee-name" name="nombre" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                        </div>
-                        <div>
-                            <label for="employee-puesto" class="block text-sm font-medium text-gray-700 mb-1">Puesto</label>
-                            <input type="text" id="employee-puesto" name="puesto" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                         <div>
-                            <label for="employee-department" class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
-                            <input type="text" id="employee-department" name="departamento" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                        </div>
-                        <div>
-                            <label for="employee-location" class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-                            <input type="text" id="employee-location" name="ubicacion" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="employee-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="employee-email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                        </div>
-                         <div>
-                            <label for="employee-phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                            <input type="tel" id="employee-phone" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
-                        </div>
+                <input type="hidden" id="employee-edit-id" name="employee-edit-id">
+                <div class="p-6 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="employee-nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                        <input type="text" id="employee-nombre" name="nombre" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
                     </div>
                     <div>
-                        <label for="employee-photo" class="block text-sm font-medium text-gray-700 mb-1">URL Foto (Opcional)</label>
-                        <input type="url" id="employee-photo" name="foto_url" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                        <label for="employee-puesto" class="block text-sm font-medium text-gray-700 mb-1">Puesto</label>
+                        <input type="text" id="employee-puesto" name="puesto" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="employee-departamento" class="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                        <input type="text" id="employee-departamento" name="departamento" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="employee-ubicacion" class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                        <input type="text" id="employee-ubicacion" name="ubicacion" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                    </div>
+                    <div>
+                        <label for="employee-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="employee-email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="employee-telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                        <input type="tel" id="employee-telefono" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="employee-foto-url" class="block text-sm font-medium text-gray-700 mb-1">URL Foto (Opcional)</label>
+                        <input type="url" id="employee-foto-url" name="foto-url" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
                     </div>
                 </div>
                 <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end items-center space-x-3">
                     <button type="button" onclick="closeEmployeeModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
                         Cancelar
                     </button>
-                    <button type="submit" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm">
+                    <button type="submit" class="bg-[#0b4d9a] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#083a75] transition-colors shadow-sm">
                         Guardar Empleado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar/Editar Noticia -->
+    <div id="add-news-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-transition modal-enter">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-semibold text-gray-800" id="news-modal-title">Crear Nueva Noticia</h3>
+            </div>
+            <form id="add-news-form">
+                <input type="hidden" id="news-edit-id" name="news-edit-id">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="news-titulo" class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                        <input type="text" id="news-titulo" name="titulo" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="news-categoria" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                        <input type="text" id="news-categoria" name="categoria" value="General" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="news-extracto" class="block text-sm font-medium text-gray-700 mb-1">Extracto (Resumen corto)</label>
+                        <textarea id="news-extracto" name="extracto" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required></textarea>
+                    </div>
+                    <div>
+                        <label for="news-imagen-url" class="block text-sm font-medium text-gray-700 mb-1">URL de la Imagen Destacada (Opcional)</label>
+                        <input type="url" id="news-imagen-url" name="imagen-url" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                    </div>
+                    <div>
+                        <label for="news-contenido-html" class="block text-sm font-medium text-gray-700 mb-1">Contenido HTML (Soporta etiquetas básicas como &lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;)</label>
+                        <textarea id="news-contenido-html" name="contenido-html" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required></textarea>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end items-center space-x-3">
+                    <button type="button" onclick="closeNewsModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="bg-[#0b4d9a] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#083a75] transition-colors shadow-sm">
+                        Guardar Noticia
                     </button>
                 </div>
             </form>
@@ -307,18 +349,17 @@
 
 
     <script>
-        // Variables globales de Autenticación
+        // --- VARIABLES GLOBALES ---
+        const API_BASE_URL = 'api/'; 
+        const mainContent = document.getElementById('main-content');
         let USER = {
-            isAuthenticated: false,
+            is_authenticated: false,
+            id: null,
             name: 'Invitado',
-            email: '',
-            photo_url: 'https://placehold.co/112x112/CCCCCC/333333?text=USER',
-            profile: 'invitado' // Valores posibles: 'admin_global', 'diseno', 'usuario', 'invitado'
+            email: 'invitado@amalgama.com',
+            profile: 'invitado', // Posibles valores: 'admin_global', 'diseno', 'usuario', 'invitado'
+            photo_url: 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P'
         };
-
-        const PROFILES_CAN_MODIFY_SLIDESHOW = ['admin_global', 'diseno'];
-        // Perfil que puede modificar el Directorio
-        const PROFILE_CAN_MODIFY_DIRECTORY = 'admin_global'; 
 
         // --- Lógica de la Interfaz ---
         function toggleMenu(menuId) {
@@ -330,7 +371,7 @@
             document.getElementById(menuId)?.classList.toggle('hidden');
         }
 
-        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+        document.getElementById('mobile-menu-button')?.addEventListener('click', () => {
             document.getElementById('mobile-menu').classList.toggle('hidden');
             document.getElementById('mobile-menu-open-icon').classList.toggle('hidden');
             document.getElementById('mobile-menu-close-icon').classList.toggle('hidden');
@@ -345,91 +386,73 @@
         });
 
 
-        // --- DATOS MOCK (Para módulos aún no conectados) ---
-        const mockNewsData = [
-            { title: 'Resultados del Q3 Superan Expectativas', category: 'Finanzas', excerpt: 'El equipo de finanzas reporta un crecimiento del 15%...' },
-            { title: 'Próxima Actualización de la Plataforma', category: 'Tecnología', excerpt: 'El equipo de desarrollo lanzará la v2.1 el próximo lunes...' },
-            { title: 'Conoce al Nuevo Integrante de Marketing', category: 'RRHH', excerpt: 'Demos la bienvenida a Mateo Rojas, nuestro nuevo Diseñador UI/UX.' },
-        ];
-        const mockEventsData = [
-            { date: '24 Oct', name: 'Reunión General Trimestral' },
-            { date: '28 Oct', name: 'Cumpleaños de Ana Sofía' },
-            { date: '02 Nov', name: 'Día de Muertos (No Laboral)' },
-        ];
-
-
-        // --- Enrutador Simple del Lado del Cliente ---
-        const mainContent = document.getElementById('main-content');
-        const API_BASE_URL = 'api/'; // Base para todas las llamadas a la API
-
-        // --- LÓGICA DE AUTENTICACIÓN Y PERFILES ---
+        // --- AUTENTICACIÓN Y PERFILES ---
 
         async function checkSession() {
             try {
-                const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'check_session' })
-                });
-
+                const response = await fetch(`${API_BASE_URL}auth_handler.php?action=check_session`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    USER.isAuthenticated = true;
-                    USER.name = result.data.name;
-                    USER.profile = result.data.profile;
-                    // Los demás campos de USER se cargarán en renderProfile
+                    USER.is_authenticated = true;
+                    USER.id = result.data.id;
+                    USER.name = result.data.nombre;
+                    USER.email = result.data.email;
+                    USER.profile = result.data.perfil;
+                    USER.photo_url = result.data.foto_url || 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';
+                    updateUIForUser();
+                    return true;
                 } else {
-                    // No hay sesión activa, redirigir a login, excepto si ya estamos allí (para evitar bucle)
-                    if (window.location.pathname.indexOf('login.html') === -1) {
-                        window.location.href = 'login.html';
+                    // Si no está autenticado, redirigir a login, excepto si ya está en login
+                    if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
+                         window.location.href = 'login.html';
                     }
+                    return false;
                 }
             } catch (error) {
                 console.error("Error al verificar la sesión:", error);
-                // En caso de error de red, forzar la redirección
-                if (window.location.pathname.indexOf('login.html') === -1) {
-                    window.location.href = 'login.html';
+                // Si falla la API, asumimos que no hay sesión por seguridad
+                if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
+                     window.location.href = 'login.html';
                 }
+                return false;
             }
         }
-        
-        function updateUIBasedOnAuth() {
-            // Actualizar display de usuario
-            document.getElementById('user-display-name').innerText = USER.name;
-            document.getElementById('user-display-profile').innerText = USER.profile.replace('_', ' ').toUpperCase();
-             document.getElementById('mobile-user-display-name').innerText = USER.name;
-            document.getElementById('mobile-user-display-profile').innerText = USER.profile.replace('_', ' ').toUpperCase();
+
+        function updateUIForUser() {
+            // Actualizar menú de usuario
+            document.getElementById('user-name-menu').innerText = USER.name;
+            document.getElementById('user-profile-menu').innerText = USER.profile.replace(/_/g, ' ').toUpperCase();
+            document.getElementById('user-avatar-nav').src = USER.photo_url;
+
+            // Actualizar menú móvil
+            document.getElementById('user-name-mobile').innerText = USER.name;
+            document.getElementById('user-email-mobile').innerText = USER.email;
+            document.getElementById('user-avatar-mobile').src = USER.photo_url;
+            
+            // Lógica de visibilidad por perfil
+            const canManageSlideshow = ['admin_global', 'diseno'].includes(USER.profile);
+            const canManageDirectory = ['admin_global'].includes(USER.profile);
+            const canManageNews = ['admin_global'].includes(USER.profile);
 
 
-            // Control de visibilidad de enlaces por perfil
-            document.querySelectorAll('[data-required-profile]').forEach(link => {
-                const requiredProfiles = link.getAttribute('data-required-profile').split(',');
-                if (requiredProfiles.includes(USER.profile)) {
-                    link.classList.remove('hidden');
-                } else {
-                    link.classList.add('hidden');
-                }
-            });
+            // Mostrar/Ocultar Gestión de Slideshow (Nav y Móvil)
+            const slideshowLink = document.getElementById('slideshow-link');
+            const slideshowLinkMobile = document.getElementById('slideshow-link-mobile');
+            if (slideshowLink) slideshowLink.classList.toggle('hidden', !canManageSlideshow);
+            if (slideshowLinkMobile) slideshowLinkMobile.classList.toggle('hidden', !canManageSlideshow);
         }
-        
-        async function logoutUser(event) {
-            event.preventDefault();
-            try {
-                await fetch(`${API_BASE_URL}auth_handler.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'logout' })
-                });
-                // Limpiar estado local y redirigir
-                USER.isAuthenticated = false;
-                USER.name = 'Invitado';
-                USER.profile = 'invitado';
+
+        function logoutUser() {
+             fetch(`${API_BASE_URL}auth_handler.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout' })
+            }).then(() => {
                 window.location.href = 'login.html';
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                alert("Error al intentar cerrar sesión. Inténtalo de nuevo.");
-            }
+            }).catch(() => {
+                 window.location.href = 'login.html';
+            });
         }
 
 
@@ -437,33 +460,39 @@
 
         async function renderDashboard() {
             try {
-                // El dashboard siempre carga los slides para el carrusel
-                const response = await fetch(`${API_BASE_URL}slideshow_handler.php`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
+                // Peticiones paralelas para eficiencia
+                const [slidesResponse, newsResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}slideshow_handler.php`),
+                    fetch(`${API_BASE_URL}noticias_handler.php?limit=3`) // Obtenemos solo 3 noticias para el dashboard
+                ]);
 
-                if (result.status !== 'success') throw new Error(result.message);
-                
-                let slides = result.data;
-                
+                const slidesResult = await slidesResponse.json();
+                const newsResult = await newsResponse.json();
+
+                // Manejo de Slides
+                let slides = slidesResult.status === 'success' ? slidesResult.data : [];
                 let slidesHTML = slides.length > 0 ? slides.map((slide, index) => `
                     <div class="carousel-item absolute inset-0 ${index === 0 ? 'opacity-100' : 'opacity-0'}" data-index="${index}">
-                        <img src="${slide.imagen_url}" class="w-full h-full object-cover" alt="${slide.titulo}" onerror="this.onerror=null;this.src='https://placehold.co/1000x400/CCCCCC/333333?text=IMAGEN+NO+DISPONIBLE'">
+                        <img src="${slide.imagen_url || 'https://placehold.co/1200x400/94A3B8/FFFFFF?text=SLIDE+SIN+IMAGEN'}" onerror="this.onerror=null; this.src='https://placehold.co/1200x400/94A3B8/FFFFFF?text=SLIDE+SIN+IMAGEN';" class="w-full h-full object-cover" alt="${slide.titulo}">
                         <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6 sm:p-8 md:p-12">
                             <h2 class="text-2xl md:text-4xl font-bold text-white shadow-lg">${slide.titulo}</h2>
                             <p class="text-md md:text-lg text-gray-200 mt-2 max-w-3xl">${slide.descripcion}</p>
                         </div>
                     </div>`).join('') : `<div class="bg-gray-800 h-full flex items-center justify-center"><p class="text-white">No hay anuncios para mostrar.</p></div>`;
                 
-                const newsHTML = mockNewsData.map(item => `
+                // Manejo de Noticias
+                let newsData = newsResult.status === 'success' ? newsResult.data : [];
+                const newsHTML = newsData.map(item => `
                     <li class="py-3">
-                        <div class="flex items-center space-x-3">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900 truncate">${item.title}</p>
-                                <p class="text-sm text-gray-500 truncate">${item.excerpt}</p>
+                        <a href="#noticias/detalle/${item.id}" class="hover:bg-gray-50 block -mx-3 px-3 py-2 rounded-lg transition-colors">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">${item.titulo}</p>
+                                    <p class="text-sm text-gray-500 truncate">${item.extracto}</p>
+                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${item.categoria}</span>
                             </div>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${item.category}</span>
-                        </div>
+                        </a>
                     </li>`).join('');
 
                 const eventsHTML = mockEventsData.map(event => `
@@ -479,50 +508,29 @@
                         </div>
                     </li>`).join('');
 
-                // Si es solo invitado, solo mostramos el slideshow y un mensaje
-                if (USER.profile === 'invitado') {
-                    mainContent.innerHTML = `
-                        <div class="space-y-8">
-                            <h1 class="text-3xl font-bold text-gray-900">Bienvenido, Invitado</h1>
-                            <div id="dashboard-carousel" class="relative w-full h-96 bg-gray-900 rounded-xl shadow-lg overflow-hidden">
-                                ${slidesHTML}
-                                ${slides.length > 1 ? `
-                                <button onclick="changeSlide(-1)" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
-                                <button onclick="changeSlide(1)" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></button>
-                                ` : ''}
-                            </div>
-                            <div class="p-8 text-center text-gray-600 bg-white rounded-xl shadow-sm">
-                                <p class="font-medium">Has iniciado sesión como Invitado. Por favor, inicia sesión con un perfil de usuario para acceder a más funciones de la intranet.</p>
-                            </div>
-                        </div>`;
-                } else {
-                    // Contenido completo para usuarios autenticados (usuario, diseno, admin_global)
-                    mainContent.innerHTML = `
-                        <div class="space-y-8">
-                            <h1 class="text-3xl font-bold text-gray-900">Dashboard Principal</h1>
-                            <div id="dashboard-carousel" class="relative w-full h-96 bg-gray-900 rounded-xl shadow-lg overflow-hidden">
-                                ${slidesHTML}
-                                ${slides.length > 1 ? `
-                                <button onclick="changeSlide(-1)" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
-                                <button onclick="changeSlide(1)" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></button>
-                                ` : ''}
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-1">
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Accesos Rápidos</h3>
-                                    <div class="grid grid-cols-2 gap-4">
-                                    <a href="#directorio" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-blue-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.962a3.75 3.75 0 1 0-5.223-5.223 3.75 3.75 0 0 0 5.223 5.223M1.5 4.5v15h16.5v-15H1.5Z" /></svg><span class="text-sm font-medium text-gray-700">Directorio</span></a>
-                                    <a href="#noticias" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-green-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-green-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" /></svg><span class="text-sm font-medium text-gray-700">Noticias</span></a>
-                                    <a href="#recursos" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-yellow-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-yellow-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125A2.25 2.25 0 0 1 4.5 4.875h15A2.25 2.25 0 0 1 21.75 7.125v10.5A2.25 2.25 0 0 1 19.5 19.875h-15A2.25 2.25 0 0 1 2.25 17.625V7.125Z" /></svg><span class="text-sm font-medium text-gray-700">Reservas</span></a>
-                                    <a href="#cursos" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-purple-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-purple-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5Zm0 0v5.5a2.5 2.5 0 0 0 5 0V14" /></svg><span class="text-sm font-medium text-gray-700">Cursos</span></a>
-                                    </div>
+                mainContent.innerHTML = `
+                    <div class="space-y-8">
+                        <div id="dashboard-carousel" class="relative w-full h-96 bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+                            ${slidesHTML}
+                            ${slides.length > 1 ? `
+                            <button onclick="changeSlide(-1)" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
+                            <button onclick="changeSlide(1)" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></button>
+                            ` : ''}
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-1">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Accesos Rápidos</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                <a href="#directorio" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-blue-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m-7.5-2.962a3.75 3.75 0 1 0-5.223-5.223 3.75 3.75 0 0 0 5.223 5.223M1.5 4.5v15h16.5v-15H1.5Z" /></svg><span class="text-sm font-medium text-gray-700">Directorio</span></a>
+                                <a href="#noticias" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-green-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-green-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" /></svg><span class="text-sm font-medium text-gray-700">Noticias</span></a>
+                                <a href="#recursos" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-yellow-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-yellow-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.125A2.25 2.25 0 0 1 4.5 4.875h15A2.25 2.25 0 0 1 21.75 7.125v10.5A2.25 2.25 0 0 1 19.5 19.875h-15A2.25 2.25 0 0 1 2.25 17.625V7.125Z" /></svg><span class="text-sm font-medium text-gray-700">Reservas</span></a>
+                                <a href="#cursos" class="nav-link flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-purple-100 rounded-lg transition-colors"><svg class="h-8 w-8 text-purple-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5Zm0 0v5.5a2.5 2.5 0 0 0 5 0V14" /></svg><span class="text-sm font-medium text-gray-700">Cursos</span></a>
                                 </div>
-                                <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-gray-800 mb-2">Últimas Noticias</h3><ul class="divide-y divide-gray-200">${newsHTML}</ul></div>
-                                <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-gray-800 mb-2">Próximos Eventos</h3><ul class="divide-y divide-gray-200">${eventsHTML}</ul></div>
                             </div>
-                        </div>`;
-                }
-
+                            <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-gray-800 mb-2">Últimas Noticias</h3><ul class="divide-y divide-gray-200">${newsHTML}</ul></div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-gray-800 mb-2">Próximos Eventos</h3><ul class="divide-y divide-gray-200">${eventsHTML}</ul></div>
+                        </div>
+                    </div>`;
                 window.currentSlideIndex = 0;
                 window.totalSlides = slides.length;
 
@@ -533,33 +541,23 @@
         }
 
         async function renderSlideshowManager() {
-            // Restringir acceso al módulo completo
-             if (!PROFILES_CAN_MODIFY_SLIDESHOW.includes(USER.profile)) {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Restringido</h2><p class="mt-2 text-gray-600">No tienes permisos para acceder al gestor de Slideshow.</p></div>`;
-                return;
+            if (!['admin_global', 'diseno'].includes(USER.profile)) {
+                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold mb-4 text-red-600">Acceso Denegado</h2><p class="text-gray-600">No tienes permisos para gestionar el Slideshow.</p></div>`;
+                 return;
             }
-
             try {
                 const response = await fetch(`${API_BASE_URL}slideshow_handler.php`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
-                
-                // Si la API falla por error 403 (Permiso denegado), el resultado JSON lo indica
-                if (result.status !== 'success') {
-                    if (response.status === 403) {
-                         mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Denegado</h2><p class="mt-2 text-gray-600">${result.message}</p></div>`;
-                         return;
-                    }
-                    throw new Error(result.message);
-                }
+                if (result.status !== 'success') throw new Error(result.message);
                 
                 const slides = result.data;
-                window.slidesData = slides; // Almacenamos los datos globalmente para facilitar la edición.
+                window.slidesData = slides; 
                 
                 let tableRowsHTML = slides.map(slide => `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3 px-4">
-                            <img src="${slide.imagen_url}" alt="${slide.titulo}" class="h-12 w-20 object-cover rounded-md" onerror="this.onerror=null;this.src='https://placehold.co/80x48/CCCCCC/333333?text=IMG'">
+                            <img src="${slide.imagen_url || 'https://placehold.co/80x40/94A3B8/FFFFFF?text=Sin+Imagen'}" onerror="this.onerror=null; this.src='https://placehold.co/80x40/94A3B8/FFFFFF?text=Sin+Imagen';" class="h-12 w-20 object-cover rounded-md">
                         </td>
                         <td class="py-3 px-4 text-sm text-gray-700 font-medium">${slide.titulo}</td>
                         <td class="py-3 px-4">
@@ -594,6 +592,7 @@
                         </div>
                     </div>
                 `;
+                document.getElementById('add-slide-form').removeEventListener('submit', handleSaveSlide); // Prevenir duplicados
                 document.getElementById('add-slide-form').addEventListener('submit', handleSaveSlide);
 
             } catch (error) {
@@ -603,47 +602,43 @@
         }
 
         async function renderDirectorio() {
-             if (!USER.isAuthenticated) {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Restringido</h2><p class="mt-2 text-gray-600">Debes iniciar sesión para ver el Directorio de Empleados.</p></div>`;
-                return;
-            }
-            
-            mainContent.innerHTML = `<div class="p-8 text-center text-gray-500">Cargando Directorio...</div>`;
-            
             try {
-                // 1. Obtener la lista de departamentos para los filtros
-                const deptResponse = await fetch(`${API_BASE_URL}directorio_handler.php?action=departments`);
-                const deptResult = await deptResponse.json();
+                // Obtener datos iniciales y la lista completa de departamentos
+                const response = await fetch(`${API_BASE_URL}directorio_handler.php`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
 
-                if (deptResult.status !== 'success') throw new Error(deptResult.message);
-                
-                const departments = ['Todos', ...deptResult.data];
+                const employees = result.data;
+                window.allEmployeesData = employees; 
+                const departments = ['Todos', ...new Set(employees.map(e => e.departamento))];
                 const filterButtonsHTML = departments.map(dept => `
                     <button class="department-filter whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${dept === 'Todos' ? 'bg-[#0b4d9a] text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}" data-department="${dept}">
                         ${dept}
                     </button>
                 `).join('');
                 
-                // Botón CRUD visible solo para Admin Global
-                const crudButton = USER.profile === PROFILE_CAN_MODIFY_DIRECTORY 
-                    ? `<button onclick="openEmployeeModal()" class="bg-[#0b4d9a] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#083a75] transition-colors shadow-sm flex items-center gap-2">
+                const canManage = USER.profile === 'admin_global';
+                const addButtonHTML = canManage ? `
+                    <button onclick="openEmployeeModal()" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
                         Agregar Empleado
-                       </button>`
-                    : '';
+                    </button>
+                ` : '';
 
-
-                // 2. Renderizar la estructura del Directorio
                 mainContent.innerHTML = `
                     <div class="space-y-8">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                            <h1 class="text-3xl font-bold text-gray-900">Directorio de Empleados</h1>
-                            ${crudButton}
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">Directorio de Empleados</h1>
+                                <p class="mt-1 text-gray-500">Encuentra a tus compañeros de equipo.</p>
+                            </div>
+                            ${addButtonHTML}
                         </div>
                         
                         <div class="space-y-4">
                             <div class="relative">
-                                <input type="search" id="employee-search" placeholder="Buscar por nombre, puesto o correo..." class="w-full rounded-lg border-gray-300 pl-10 pr-4 py-2 focus:border-[#0b4d9a] focus:ring-[#0b4d9a]">
+                                <input type="search" id="employee-search" placeholder="Buscar por nombre, puesto o departamento..." class="w-full rounded-lg border-gray-300 pl-10 pr-4 py-2 focus:border-[#0b4d9a] focus:ring-[#0b4d9a]">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
                                 </div>
@@ -657,67 +652,27 @@
                     </div>
                 `;
                 
-                // 3. Obtener y mostrar la lista inicial de empleados
-                await filterEmployees(); 
+                displayEmployees(employees); 
 
-                // 4. Configurar Event Listeners
                 document.getElementById('employee-search').addEventListener('keyup', filterEmployees);
-                document.querySelectorAll('.department-filter').forEach(button => {
-                    button.addEventListener('click', () => {
-                        // Resaltar el botón activo
+                document.getElementById('department-filters').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('department-filter')) {
                         document.querySelectorAll('.department-filter').forEach(btn => {
                             btn.classList.remove('bg-[#0b4d9a]', 'text-white');
                             btn.classList.add('bg-white', 'text-gray-600');
                         });
-                        button.classList.add('bg-[#0b4d9a]', 'text-white');
-                        button.classList.remove('bg-white', 'text-gray-600');
-                        // Aplicar filtro
+                        e.target.classList.add('bg-[#0b4d9a]', 'text-white');
+                        e.target.classList.remove('bg-white', 'text-gray-600');
                         filterEmployees();
-                    });
+                    }
                 });
-                
-                // Añadir el listener para el formulario del CRUD
-                document.getElementById('add-employee-form').addEventListener('submit', handleSaveEmployee);
+                 document.getElementById('add-employee-form')?.removeEventListener('submit', handleSaveEmployee);
+                 document.getElementById('add-employee-form')?.addEventListener('submit', handleSaveEmployee);
 
 
             } catch (error) {
                 console.error("Error al cargar el directorio:", error);
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Carga</h3><p class="text-gray-600 mt-2">No se pudo cargar el Directorio. Asegúrate de que la tabla 'empleados' y la API 'directorio_handler.php' estén configuradas correctamente.</p><p class="text-xs text-gray-400 mt-2">Detalle: ${error.message}</p></div>`;
-            }
-        }
-
-        /**
-         * Llama a la API de directorio con los filtros actuales y actualiza la cuadrícula.
-         */
-        async function filterEmployees() {
-            const searchTerm = document.getElementById('employee-search')?.value || '';
-            const activeDepartmentBtn = document.querySelector('.department-filter.bg-\\[\\#0b4d9a\\]');
-            const activeDepartment = activeDepartmentBtn ? activeDepartmentBtn.dataset.department : 'Todos';
-
-            const grid = document.getElementById('employee-grid');
-            if (!grid) return;
-            grid.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">Buscando empleados...</p>';
-
-            try {
-                let url = `${API_BASE_URL}directorio_handler.php?search=${encodeURIComponent(searchTerm)}`;
-                if (activeDepartment !== 'Todos') {
-                    url += `&department=${encodeURIComponent(activeDepartment)}`;
-                }
-
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    window.employeesData = result.data; // Almacenar para edición
-                    displayEmployees(result.data);
-                } else {
-                     grid.innerHTML = `<p class="col-span-full text-center text-red-500 py-10">Error en la API: ${result.message}</p>`;
-                }
-
-            } catch (error) {
-                 grid.innerHTML = `<p class="col-span-full text-center text-red-500 py-10">Error de conexión al cargar datos.</p>`;
-                 console.error("Error en filterEmployees:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar el directorio. Por favor, revisa tu conexión o contacta a soporte.</p></div>`;
             }
         }
 
@@ -729,27 +684,29 @@
                 grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No se encontraron empleados con esos criterios.</p>`;
                 return;
             }
-            
-            const isAdmin = USER.profile === PROFILE_CAN_MODIFY_DIRECTORY;
+            const canManage = USER.profile === 'admin_global';
 
             grid.innerHTML = employees.map(employee => `
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden text-center transform hover:shadow-lg transition-all duration-300">
-                    <img class="w-28 h-28 rounded-full mx-auto mt-6 border-4 border-white shadow-md object-cover" src="${employee.foto_url}" alt="Foto de ${employee.nombre}" onerror="this.onerror=null;this.src='https://placehold.co/112x112/CCCCCC/333333?text=USER'">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden text-center transform hover:scale-[1.02] transition-transform duration-300">
+                    <img class="w-28 h-28 rounded-full mx-auto mt-6 border-4 border-white shadow-md object-cover" 
+                         src="${employee.foto_url || 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P'}" 
+                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';"
+                         alt="Foto de ${employee.nombre}">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900">${employee.nombre}</h3>
-                        <p class="text-sm text-[#0b4d9a] font-medium">${employee.puesto}</p>
-                        <p class="text-xs text-[#f5851f] mt-1">${employee.departamento} (${employee.ubicacion || 'N/A'})</p>
+                        <p class="text-sm text-[#f5851f] font-medium">${employee.puesto}</p>
+                        <p class="text-xs text-gray-500 mt-1">${employee.departamento}${employee.ubicacion ? ` (${employee.ubicacion})` : ''}</p>
                         <div class="mt-4 border-t pt-4 space-y-2">
-                             <a href="mailto:${employee.email}" class="text-sm text-gray-600 hover:text-[#0b4d9a] flex items-center justify-center gap-2">
+                            <a href="mailto:${employee.email}" class="text-sm text-gray-600 hover:text-[#0b4d9a] flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" /></svg>
                                 ${employee.email}
                             </a>
                             ${employee.telefono ? `<a href="tel:${employee.telefono}" class="text-sm text-gray-600 hover:text-[#0b4d9a] flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.109a1.5 1.5 0 0 1 1.488 1.173L7.71 7.23a.75.75 0 0 1-.58 1.054l-1.928.322c-1.353.226-2.072 1.625-1.528 2.809l.342.71c.795 1.653 2.124 2.982 3.778 3.777l.71.342c1.184.544 2.583-.175 2.809-1.528l.322-1.928a.75.75 0 0 1 1.054-.58l4.057 1.527a1.5 1.5 0 0 1 1.173 1.488V16.5A1.5 1.5 0 0 1 16.5 18h-10A8.5 8.5 0 0 1 2 9.5v-6Z" clip-rule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h13A1.5 1.5 0 0 1 18 3.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 16.5v-13ZM15.5 14.5a.75.75 0 0 0 1.5 0v-11a.75.75 0 0 0-1.5 0v11Z" clip-rule="evenodd" /><path d="M11 9.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M14.25 10.75a.75.75 0 0 0 0-1.5h-8.5a.75.75 0 0 0 0 1.5h8.5Z" /></svg>
                                 ${employee.telefono}
                             </a>` : ''}
                         </div>
-                        ${isAdmin ? `
+                        ${canManage ? `
                             <div class="mt-4 pt-4 border-t flex justify-center space-x-4">
                                 <button onclick="editEmployee(${employee.id})" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
                                 <button onclick="deleteEmployee(${employee.id})" class="text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
@@ -760,140 +717,306 @@
             `).join('');
         }
         
-        // --- Lógica CRUD Directorio (NUEVAS FUNCIONES) ---
+        async function renderNoticias(id = null) {
+            try {
+                if (id) {
+                    await renderNoticiaDetalle(id);
+                    return;
+                }
 
-        function openEmployeeModal(employeeData = null) {
-            if (USER.profile !== PROFILE_CAN_MODIFY_DIRECTORY) return;
-            
-            const form = document.getElementById('add-employee-form');
-            form.reset();
-            
-            if (employeeData) {
-                document.getElementById('employee-modal-title').innerText = 'Editar Empleado';
-                document.getElementById('employee-edit-id').value = employeeData.id;
-                document.getElementById('employee-name').value = employeeData.nombre;
-                document.getElementById('employee-puesto').value = employeeData.puesto;
-                document.getElementById('employee-department').value = employeeData.departamento;
-                document.getElementById('employee-location').value = employeeData.ubicacion || '';
-                document.getElementById('employee-email').value = employeeData.email;
-                document.getElementById('employee-phone').value = employeeData.telefono || '';
-                document.getElementById('employee-photo').value = employeeData.foto_url || '';
-            } else {
-                document.getElementById('employee-modal-title').innerText = 'Agregar Nuevo Empleado';
-                document.getElementById('employee-edit-id').value = ''; 
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php?limit=100`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                
+                const noticias = result.data;
+                window.noticiasData = noticias; // Almacenamos para edición
+                const canManage = USER.profile === 'admin_global';
+
+                const newsListHTML = noticias.map(n => `
+                    <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-start">
+                            <img src="${n.imagen_url || 'https://placehold.co/100x100/CCCCCC/333333?text=NEWS'}" onerror="this.onerror=null; this.src='https://placehold.co/100x100/CCCCCC/333333?text=NEWS';" class="w-24 h-24 object-cover rounded-lg mr-4 flex-shrink-0">
+                            <div class="flex-1">
+                                <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">${n.categoria}</span>
+                                <h3 class="mt-2 text-xl font-bold text-gray-800 hover:text-[#0b4d9a] cursor-pointer" onclick="window.location.hash = 'noticias/detalle/${n.id}'">${n.titulo}</h3>
+                                <p class="mt-2 text-gray-600 text-sm">${n.extracto}</p>
+                                <p class="mt-3 text-xs text-gray-400">Publicado: ${new Date(n.fecha_publicacion).toLocaleDateString()}</p>
+                                ${canManage ? `
+                                    <div class="mt-4 flex space-x-4">
+                                        <button onclick="editNews(${n.id})" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
+                                        <button onclick="deleteNews(${n.id})" class="text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                mainContent.innerHTML = `
+                    <div class="space-y-8">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                            <h1 class="text-3xl font-bold text-gray-900">Noticias Internas</h1>
+                            ${canManage ? `<button onclick="openNewsModal()" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                                Publicar Noticia
+                            </button>` : ''}
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${noticias.length > 0 ? newsListHTML : '<div class="col-span-full text-center py-10 text-gray-500">No hay noticias publicadas.</div>'}
+                        </div>
+                    </div>
+                `;
+                 document.getElementById('add-news-form')?.removeEventListener('submit', handleSaveNews);
+                 document.getElementById('add-news-form')?.addEventListener('submit', handleSaveNews);
+
+            } catch (error) {
+                console.error("Error al cargar la lista de noticias:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar la lista de noticias.</p></div>`;
+            }
+        }
+
+        async function renderNoticiaDetalle(id) {
+             try {
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php?id=${id}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                
+                const n = result.data;
+
+                mainContent.innerHTML = `
+                    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+                        <a href="#noticias" class="text-[#0b4d9a] hover:text-[#083a75] font-medium p-6 block">&larr; Volver a Noticias</a>
+                        <img class="w-full h-80 object-cover" src="${n.imagen_url || 'https://placehold.co/1200x400/94A3B8/FFFFFF?text=IMAGEN+DESTACADA'}" onerror="this.onerror=null; this.src='https://placehold.co/1200x400/94A3B8/FFFFFF?text=IMAGEN+DESTACADA';" alt="${n.titulo}">
+                        <div class="p-8 space-y-6">
+                            <span class="inline-flex items-center px-4 py-1 text-sm font-semibold rounded-full bg-[#f5851f] text-white">${n.categoria}</span>
+                            <h1 class="text-4xl font-extrabold text-gray-900">${n.titulo}</h1>
+                            <p class="text-gray-500 text-sm">Publicado: ${new Date(n.fecha_publicacion).toLocaleDateString()} | Resumen: ${n.extracto}</p>
+                            <div class="prose max-w-none text-gray-700 leading-relaxed border-t pt-6">
+                                ${n.contenido_html}
+                            </div>
+                            <div class="border-t pt-4">
+                                <a href="#noticias" class="text-[#0b4d9a] hover:text-[#083a75] font-medium">&larr; Volver a la lista de Noticias</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error("Error al cargar el detalle de la noticia:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error al cargar la noticia</h3><p class="text-gray-600 mt-2">No se encontró la noticia solicitada o hubo un error de conexión.</p></div>`;
+            }
+        }
+
+
+        async function renderProfile() {
+            try {
+                // Obtener datos más recientes del usuario
+                const response = await fetch(`${API_BASE_URL}auth_handler.php?action=get_profile`);
+                if (!response.ok) throw new Error("Error fetching profile data");
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const data = result.data;
+                    USER.name = data.nombre;
+                    USER.email = data.email;
+                    USER.profile = data.perfil;
+                    USER.photo_url = data.foto_url || 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';
+                    updateUIForUser();
+                } else {
+                    console.error("Error al cargar perfil:", result.message);
+                }
+
+            } catch (error) {
+                console.error("Error de conexión al cargar perfil:", error);
+                // No detenemos la ejecución, pero loggeamos el error
             }
 
-            const modal = document.getElementById('add-employee-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('modal-enter-active');
+            mainContent.innerHTML = `
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-6">Mi Perfil</h1>
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden p-6 sm:p-8">
+                        
+                        <!-- Header de Perfil -->
+                        <div class="flex items-center space-x-4 border-b pb-6 mb-6">
+                            <img class="w-20 h-20 rounded-full object-cover border-4 border-[#f5851f]" src="${USER.photo_url}" onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';" alt="Foto de perfil">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900">${USER.name}</h2>
+                                <p class="text-md text-gray-500">${USER.email}</p>
+                                <span class="inline-block mt-1 px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">${USER.profile.replace(/_/g, ' ')}</span>
+                            </div>
+                        </div>
+
+                        <!-- Navegación por pestañas -->
+                        <div class="border-b border-gray-200">
+                            <nav class="flex space-x-4" aria-label="Tabs">
+                                <button type="button" onclick="showProfileTab('general')" id="tab-general" class="tab-button inline-flex items-center px-3 py-2 border-b-2 font-medium text-sm text-[#0b4d9a] border-[#0b4d9a]">
+                                    Información General
+                                </button>
+                                <button type="button" onclick="showProfileTab('password')" id="tab-password" class="tab-button inline-flex items-center px-3 py-2 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                                    Seguridad y Contraseña
+                                </button>
+                            </nav>
+                        </div>
+                        
+                        <!-- Contenido de las Pestañas -->
+                        <div class="mt-8">
+                            <!-- Pestaña General -->
+                            <div id="content-general" class="tab-content">
+                                <form id="profile-update-form" class="space-y-6">
+                                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                        <div class="sm:col-span-6">
+                                            <label for="profile-name" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                                            <input type="text" id="profile-name" value="${USER.name}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                        </div>
+                                        <div class="sm:col-span-6">
+                                            <label for="profile-photo-url" class="block text-sm font-medium text-gray-700">URL de la Foto de Perfil</label>
+                                            <input type="url" id="profile-photo-url" value="${USER.photo_url}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                        </div>
+                                    </div>
+                                    <div class="pt-5">
+                                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#f5851f] hover:bg-[#d9741c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f5851f]">
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Pestaña Contraseña -->
+                            <div id="content-password" class="tab-content hidden">
+                                <form id="password-change-form" class="space-y-6">
+                                    <div>
+                                        <label for="current-password" class="block text-sm font-medium text-gray-700">Contraseña Actual</label>
+                                        <input type="password" id="current-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                    </div>
+                                    <div>
+                                        <label for="new-password" class="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
+                                        <input type="password" id="new-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                    </div>
+                                    <div>
+                                        <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirmar Nueva Contraseña</label>
+                                        <input type="password" id="confirm-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
+                                    </div>
+                                    <div class="pt-5">
+                                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            Cambiar Contraseña
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Añadir event listeners después de renderizar
+            document.getElementById('profile-update-form')?.addEventListener('submit', handleProfileUpdate);
+            document.getElementById('password-change-form')?.addEventListener('submit', handlePasswordChange);
         }
 
-        function closeEmployeeModal() {
-            const modal = document.getElementById('add-employee-modal');
-            modal.classList.remove('modal-enter-active');
-            modal.classList.add('modal-leave-active');
-            setTimeout(() => modal.classList.add('hidden'), 300);
+        // --- LÓGICA DE CONTROL ---
+
+        function showProfileTab(tab) {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('text-[#0b4d9a]', 'border-[#0b4d9a]');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            const activeTab = document.getElementById(`tab-${tab}`);
+            activeTab.classList.add('text-[#0b4d9a]', 'border-[#0b4d9a]');
+            activeTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
         }
-        
-        async function handleSaveEmployee(event) {
+
+        async function handleProfileUpdate(event) {
             event.preventDefault();
-            if (USER.profile !== PROFILE_CAN_MODIFY_DIRECTORY) return;
-            
-            const form = event.target;
-            const id = form.querySelector('#employee-edit-id').value;
-            
-            const body = {
-                action: id ? 'update' : 'create',
-                id: id ? parseInt(id) : null,
-                nombre: form.querySelector('#employee-name').value,
-                puesto: form.querySelector('#employee-puesto').value,
-                departamento: form.querySelector('#employee-department').value,
-                ubicacion: form.querySelector('#employee-location').value,
-                email: form.querySelector('#employee-email').value,
-                telefono: form.querySelector('#employee-phone').value,
-                foto_url: form.querySelector('#employee-photo').value,
-            };
+            const newName = document.getElementById('profile-name').value;
+            const newPhotoUrl = document.getElementById('profile-photo-url').value;
 
             try {
-                const response = await fetch(`${API_BASE_URL}directorio_handler.php`, {
+                const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({
+                        action: 'update_profile',
+                        nombre: newName,
+                        foto_url: newPhotoUrl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Perfil actualizado con éxito. La página se recargará.');
+                    // Actualizar el estado global y recargar la vista
+                    await checkSession(); 
+                    renderProfile();
+                } else {
+                    alert('Error al actualizar el perfil: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de actualización de perfil:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        async function handlePasswordChange(event) {
+            event.preventDefault();
+            const currentPass = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-password').value;
+
+            if (newPass !== confirmPass) {
+                alert('La nueva contraseña y su confirmación no coinciden.');
+                return;
+            }
+
+            try {
+                 const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'change_password',
+                        current_password: currentPass,
+                        new_password: newPass
+                    })
                 });
                 
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    alert(`Empleado ${id ? 'actualizado' : 'creado'} con éxito!`);
-                    closeEmployeeModal();
-                    // Recargar el Directorio para ver los cambios
-                    await renderDirectorio(); 
+                    alert('Contraseña actualizada con éxito. Por seguridad, debe iniciar sesión nuevamente.');
+                    logoutUser(); // Forzar logout
                 } else {
-                    alert('Error al guardar el empleado: ' + (result.message || 'Error desconocido.'));
+                    alert('Error al cambiar la contraseña: ' + result.message);
                 }
+
             } catch (error) {
-                console.error("Error en la petición de guardado de empleado:", error);
-                alert('Error de conexión o servidor al guardar empleado.');
+                console.error("Error en la petición de cambio de contraseña:", error);
+                alert('Error de conexión o servidor.');
             }
         }
 
-        async function editEmployee(id) {
-            if (USER.profile !== PROFILE_CAN_MODIFY_DIRECTORY) return;
-            const employeeToEdit = window.employeesData.find(e => parseInt(e.id) === id);
+        function filterEmployees() {
+            const searchTerm = document.getElementById('employee-search').value.toLowerCase();
+            const activeDepartmentBtn = document.querySelector('.department-filter.bg-\\[\\#0b4d9a\\]');
+            const activeDepartment = activeDepartmentBtn ? activeDepartmentBtn.dataset.department : 'Todos';
             
-            if (employeeToEdit) {
-                openEmployeeModal(employeeToEdit);
-            } else {
-                // Si no está en la caché, hacemos una llamada para asegurarnos
-                try {
-                    const response = await fetch(`${API_BASE_URL}directorio_handler.php?action=get_employee&id=${id}`);
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                         openEmployeeModal(result.data);
-                    } else {
-                         alert('Error: Empleado no encontrado.');
-                    }
-                } catch (error) {
-                    console.error("Error al obtener empleado para editar:", error);
-                    alert('Error al obtener datos del empleado.');
-                }
-            }
+            // Usamos window.allEmployeesData para filtrar
+            const filteredEmployees = window.allEmployeesData.filter(employee => {
+                const searchMatch = (
+                    employee.nombre.toLowerCase().includes(searchTerm) ||
+                    employee.puesto.toLowerCase().includes(searchTerm) ||
+                    employee.departamento.toLowerCase().includes(searchTerm)
+                );
+                const departmentMatch = activeDepartment === 'Todos' || employee.departamento === activeDepartment;
+                return searchMatch && departmentMatch;
+            });
+            displayEmployees(filteredEmployees);
         }
 
-        async function deleteEmployee(id) {
-            if (USER.profile !== PROFILE_CAN_MODIFY_DIRECTORY) return;
-
-            if (!confirm('¿Estás seguro de que quieres eliminar este empleado? Esta acción es irreversible.')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}directorio_handler.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'delete', id: id })
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    alert('Empleado eliminado con éxito!');
-                    await renderDirectorio();
-                } else {
-                    alert('Error al eliminar el empleado: ' + (result.message || 'Error desconocido.'));
-                }
-            } catch (error) {
-                console.error("Error en la petición de eliminación de empleado:", error);
-                alert('Error de conexión o servidor al eliminar empleado.');
-            }
-        }
-        
-        // --- Lógica de Control (CRUD Slideshow) ---
-        
-        /**
-         * Abre el modal, rellenando con datos si se está editando un slide existente.
-         * @param {Object} slideData - Los datos del slide a editar (opcional).
-         */
         function openAddSlideModal(slideData = null) {
             const form = document.getElementById('add-slide-form');
             form.reset();
@@ -910,7 +1033,7 @@
             }
 
             const modal = document.getElementById('add-slide-modal');
-            modal.classList.remove('hidden');
+            modal.classList.remove('hidden', 'modal-leave-active');
             modal.classList.add('modal-enter-active');
         }
 
@@ -921,19 +1044,8 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
         
-        /**
-         * Maneja el envío del formulario para crear o actualizar un slide.
-         * @param {Event} event - El evento de envío del formulario.
-         */
         async function handleSaveSlide(event) {
             event.preventDefault();
-            
-            // Re-verificar permisos antes de enviar
-             if (!PROFILES_CAN_MODIFY_SLIDESHOW.includes(USER.profile)) {
-                 alert('Acceso denegado. No tienes permisos para modificar el slideshow.');
-                 return;
-             }
-             
             const form = event.target;
             const id = form.querySelector('#slide-edit-id').value;
             const title = form.querySelector('#slide-title').value;
@@ -942,8 +1054,6 @@
 
             const action = id ? 'update' : 'create';
             const method = 'POST';
-            
-            // Creamos el cuerpo de la petición JSON
             const body = JSON.stringify({
                 action: action,
                 id: id ? parseInt(id) : null,
@@ -958,17 +1068,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: body
                 });
-                
+
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    // Usamos alert temporalmente, idealmente sería un mensaje flotante más estético
                     alert(`Slide ${action === 'create' ? 'creado' : 'actualizado'} con éxito!`);
                     closeAddSlideModal();
-                    // Recargar el módulo para ver los cambios
                     renderSlideshowManager(); 
+                    if (action === 'create') renderDashboard();
                 } else {
-                    alert('Error al guardar el slide: ' + (result.message || 'Error desconocido.'));
+                    alert('Error al guardar el slide: ' + result.message);
                 }
             } catch (error) {
                 console.error("Error en la petición de guardado:", error);
@@ -976,10 +1085,6 @@
             }
         }
 
-        /**
-         * Prepara el modal para editar un slide.
-         * @param {number} id - El ID del slide a editar.
-         */
         function editSlide(id) {
             if (!window.slidesData) {
                 console.error("Datos de slides no cargados.");
@@ -993,17 +1098,7 @@
             }
         }
 
-        /**
-         * Elimina un slide mediante una petición al backend.
-         * @param {number} id - El ID del slide a eliminar.
-         */
         async function deleteSlide(id) {
-             // Re-verificar permisos antes de enviar
-             if (!PROFILES_CAN_MODIFY_SLIDESHOW.includes(USER.profile)) {
-                 alert('Acceso denegado. No tienes permisos para eliminar el slideshow.');
-                 return;
-             }
-            
             if (!confirm('¿Estás seguro de que quieres eliminar este slide? Esta acción es irreversible.')) {
                 return;
             }
@@ -1019,10 +1114,228 @@
 
                 if (result.status === 'success') {
                     alert('Slide eliminado con éxito!');
-                    // Recargar el módulo para ver los cambios
                     renderSlideshowManager();
+                    renderDashboard();
                 } else {
-                    alert('Error al eliminar el slide: ' + (result.message || 'Error desconocido.'));
+                    alert('Error al eliminar el slide: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de eliminación:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        function openEmployeeModal(employeeData = null) {
+            const form = document.getElementById('add-employee-form');
+            form.reset();
+            
+            if (employeeData) {
+                document.getElementById('employee-modal-title').innerText = 'Editar Empleado';
+                document.getElementById('employee-edit-id').value = employeeData.id;
+                document.getElementById('employee-nombre').value = employeeData.nombre;
+                document.getElementById('employee-puesto').value = employeeData.puesto;
+                document.getElementById('employee-departamento').value = employeeData.departamento;
+                document.getElementById('employee-ubicacion').value = employeeData.ubicacion;
+                document.getElementById('employee-email').value = employeeData.email;
+                document.getElementById('employee-telefono').value = employeeData.telefono;
+                document.getElementById('employee-foto-url').value = employeeData.foto_url;
+            } else {
+                document.getElementById('employee-modal-title').innerText = 'Agregar Nuevo Empleado';
+                document.getElementById('employee-edit-id').value = ''; 
+            }
+
+            const modal = document.getElementById('add-employee-modal');
+            modal.classList.remove('hidden', 'modal-leave-active');
+            modal.classList.add('modal-enter-active');
+        }
+
+        function closeEmployeeModal() {
+            const modal = document.getElementById('add-employee-modal');
+            modal.classList.remove('modal-enter-active');
+            modal.classList.add('modal-leave-active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        async function handleSaveEmployee(event) {
+            event.preventDefault();
+            const form = event.target;
+            const id = form.querySelector('#employee-edit-id').value;
+            const action = id ? 'update' : 'create';
+            
+            const body = JSON.stringify({
+                action: action,
+                id: id ? parseInt(id) : null,
+                nombre: form.querySelector('#employee-nombre').value,
+                puesto: form.querySelector('#employee-puesto').value,
+                departamento: form.querySelector('#employee-departamento').value,
+                ubicacion: form.querySelector('#employee-ubicacion').value,
+                email: form.querySelector('#employee-email').value,
+                telefono: form.querySelector('#employee-telefono').value,
+                foto_url: form.querySelector('#employee-foto-url').value,
+            });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}directorio_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert(`Empleado ${action === 'create' ? 'creado' : 'actualizado'} con éxito!`);
+                    closeEmployeeModal();
+                    renderDirectorio(); 
+                } else {
+                    alert('Error al guardar el empleado: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de guardado:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        function editEmployee(id) {
+            if (!window.allEmployeesData) {
+                console.error("Datos de empleados no cargados.");
+                return;
+            }
+            const employeeToEdit = window.allEmployeesData.find(e => parseInt(e.id) === id);
+            if (employeeToEdit) {
+                openEmployeeModal(employeeToEdit);
+            } else {
+                alert('Error: Empleado no encontrado.');
+            }
+        }
+
+        async function deleteEmployee(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar a este empleado del directorio?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}directorio_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Empleado eliminado con éxito!');
+                    renderDirectorio();
+                } else {
+                    alert('Error al eliminar el empleado: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de eliminación:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        function openNewsModal(newsData = null) {
+            const form = document.getElementById('add-news-form');
+            form.reset();
+            
+            if (newsData) {
+                document.getElementById('news-modal-title').innerText = 'Editar Noticia';
+                document.getElementById('news-edit-id').value = newsData.id;
+                document.getElementById('news-titulo').value = newsData.titulo;
+                document.getElementById('news-extracto').value = newsData.extracto;
+                document.getElementById('news-contenido-html').value = newsData.contenido_html;
+                document.getElementById('news-imagen-url').value = newsData.imagen_url;
+                document.getElementById('news-categoria').value = newsData.categoria;
+            } else {
+                document.getElementById('news-modal-title').innerText = 'Crear Nueva Noticia';
+                document.getElementById('news-edit-id').value = ''; 
+            }
+
+            const modal = document.getElementById('add-news-modal');
+            modal.classList.remove('hidden', 'modal-leave-active');
+            modal.classList.add('modal-enter-active');
+        }
+
+        function closeNewsModal() {
+            const modal = document.getElementById('add-news-modal');
+            modal.classList.remove('modal-enter-active');
+            modal.classList.add('modal-leave-active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        
+        async function handleSaveNews(event) {
+            event.preventDefault();
+            const form = event.target;
+            const id = form.querySelector('#news-edit-id').value;
+            const action = id ? 'update' : 'create';
+            
+            const body = JSON.stringify({
+                action: action,
+                id: id ? parseInt(id) : null,
+                titulo: form.querySelector('#news-titulo').value,
+                extracto: form.querySelector('#news-extracto').value,
+                contenido_html: form.querySelector('#news-contenido-html').value,
+                imagen_url: form.querySelector('#news-imagen-url').value,
+                categoria: form.querySelector('#news-categoria').value,
+            });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert(`Noticia ${action === 'create' ? 'creada' : 'actualizada'} con éxito!`);
+                    closeNewsModal();
+                    renderNoticias(); 
+                    renderDashboard();
+                } else {
+                    alert('Error al guardar la noticia: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de guardado:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        function editNews(id) {
+            if (!window.noticiasData) {
+                console.error("Datos de noticias no cargados.");
+                return;
+            }
+            const newsToEdit = window.noticiasData.find(n => parseInt(n.id) === id);
+            if (newsToEdit) {
+                openNewsModal(newsToEdit);
+            } else {
+                alert('Error: Noticia no encontrada.');
+            }
+        }
+
+        async function deleteNews(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta noticia? Esta acción es irreversible.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Noticia eliminada con éxito!');
+                    renderNoticias();
+                    renderDashboard();
+                } else {
+                    alert('Error al eliminar la noticia: ' + result.message);
                 }
             } catch (error) {
                 console.error("Error en la petición de eliminación:", error);
@@ -1039,303 +1352,96 @@
             slides[window.currentSlideIndex].classList.remove('opacity-0');
             slides[window.currentSlideIndex].classList.add('opacity-100');
         }
-        
-        // --- Lógica del Módulo de Perfil ---
-        
-        async function renderProfile() {
-             if (!USER.isAuthenticated) {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Restringido</h2><p class="mt-2 text-gray-600">Debes iniciar sesión para ver tu Perfil.</p></div>`;
-                return;
-            }
-            
-            mainContent.innerHTML = `<div class="p-8 text-center text-gray-500">Cargando datos de perfil...</div>`;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}auth_handler.php?action=get_profile`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const result = await response.json();
-
-                if (result.status !== 'success') throw new Error(result.message);
-                
-                const profile = result.data;
-                // Actualizar la variable USER global con datos más detallados
-                USER.name = profile.nombre;
-                USER.email = profile.email;
-                USER.profile = profile.perfil;
-                USER.photo_url = profile.foto_url || 'https://placehold.co/112x112/CCCCCC/333333?text=USER';
-
-                mainContent.innerHTML = `
-                    <div class="space-y-8">
-                        <h1 class="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-                        
-                        <div class="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-xl shadow-sm">
-                            <!-- Columna de Navegación del Perfil -->
-                            <div class="md:w-1/4 border-r pr-6">
-                                <nav class="flex flex-col space-y-2">
-                                    <button onclick="showProfileTab('general')" class="profile-tab-button text-left px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-[#0b4d9a]" data-tab="general">Información General</button>
-                                    <button onclick="showProfileTab('security')" class="profile-tab-button text-left px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100" data-tab="security">Seguridad (Contraseña)</button>
-                                </nav>
-                            </div>
-
-                            <!-- Contenido del Perfil -->
-                            <div class="md:w-3/4">
-                                <!-- Pestaña 1: Información General -->
-                                <div id="profile-tab-general" class="profile-tab-content space-y-6">
-                                    <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Datos Personales</h2>
-                                    <form id="profile-general-form" onsubmit="handleProfileUpdate(event)">
-                                        <div class="flex items-center space-x-6 mb-8">
-                                            <img id="profile-photo-display" class="h-24 w-24 rounded-full object-cover border-4 border-gray-100" src="${USER.photo_url}" alt="Foto de perfil">
-                                            <div>
-                                                <p class="text-lg font-medium text-gray-900">${USER.name}</p>
-                                                <p class="text-sm text-gray-500">${USER.email}</p>
-                                                <p class="text-xs text-[#f5851f] capitalize">${USER.profile.replace('_', ' ')}</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="space-y-4 max-w-md">
-                                            <div>
-                                                <label for="profile-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                                                <input type="text" id="profile-name" value="${USER.name}" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                                            </div>
-                                            <div>
-                                                <label for="profile-email-static" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico (No Editable)</label>
-                                                <input type="email" id="profile-email-static" value="${USER.email}" disabled class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-md shadow-sm">
-                                            </div>
-                                            <div>
-                                                <label for="profile-photo-url" class="block text-sm font-medium text-gray-700 mb-1">URL de la Foto de Perfil</label>
-                                                <input type="url" id="profile-photo-url" value="${USER.photo_url === 'https://placehold.co/112x112/CCCCCC/333333?text=USER' ? '' : USER.photo_url}" oninput="document.getElementById('profile-photo-display').src = this.value || 'https://placehold.co/112x112/CCCCCC/333333?text=USER'" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]">
-                                            </div>
-                                        </div>
-                                        <div class="mt-6">
-                                            <button type="submit" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm">
-                                                Guardar Cambios
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <!-- Pestaña 2: Seguridad/Contraseña -->
-                                <div id="profile-tab-security" class="profile-tab-content space-y-6 hidden">
-                                    <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Cambio de Contraseña</h2>
-                                    <form id="profile-password-form" onsubmit="handlePasswordChange(event)">
-                                        <div class="space-y-4 max-w-md">
-                                            <div>
-                                                <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
-                                                <input type="password" id="current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
-                                            </div>
-                                            <div>
-                                                <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña (Mínimo 6 caracteres)</label>
-                                                <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required minlength="6">
-                                            </div>
-                                            <div>
-                                                <label for="confirm-password" class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
-                                                <input type="password" id="confirm-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required minlength="6">
-                                            </div>
-                                        </div>
-                                        <div class="mt-6">
-                                            <button type="submit" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
-                                                Cambiar Contraseña
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            } catch (error) {
-                console.error("Error al cargar el perfil:", error);
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error al cargar Perfil</h3><p class="text-gray-600 mt-2">No se pudo obtener la información de tu perfil. Por favor, intenta más tarde.</p></div>`;
-            }
-        }
-        
-        /**
-         * Muestra la pestaña de perfil seleccionada.
-         */
-        function showProfileTab(tabName) {
-            document.querySelectorAll('.profile-tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-             document.querySelectorAll('.profile-tab-button').forEach(button => {
-                button.classList.remove('bg-blue-50', 'text-[#0b4d9a]');
-                button.classList.add('text-gray-700', 'hover:bg-gray-100');
-            });
-
-            document.getElementById(`profile-tab-${tabName}`).classList.remove('hidden');
-            document.querySelector(`.profile-tab-button[data-tab="${tabName}"]`).classList.add('bg-blue-50', 'text-[#0b4d9a]');
-            document.querySelector(`.profile-tab-button[data-tab="${tabName}"]`).classList.remove('text-gray-700', 'hover:bg-gray-100');
-        }
-        
-        /**
-         * Maneja la actualización de Nombre y Foto de Perfil.
-         */
-        async function handleProfileUpdate(event) {
-            event.preventDefault();
-            
-            const newName = document.getElementById('profile-name').value;
-            const newPhotoUrl = document.getElementById('profile-photo-url').value;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'update_profile', 
-                        name: newName, 
-                        photo_url: newPhotoUrl 
-                    })
-                });
-                
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    alert('¡Perfil actualizado con éxito!');
-                    // Recargar UI con la nueva información
-                    USER.name = newName;
-                    USER.photo_url = newPhotoUrl || 'https://placehold.co/112x112/CCCCCC/333333?text=USER';
-                    updateUIBasedOnAuth();
-                    renderProfile(); // Renderizar perfil de nuevo para reflejar los cambios
-                } else {
-                    alert('Error al actualizar el perfil: ' + (result.message || 'Error desconocido.'));
-                }
-            } catch (error) {
-                console.error("Error en la petición de actualización de perfil:", error);
-                alert('Error de conexión o servidor.');
-            }
-        }
-        
-        /**
-         * Maneja el cambio de contraseña.
-         */
-        async function handlePasswordChange(event) {
-             event.preventDefault();
-
-             const currentPassword = document.getElementById('current-password').value;
-             const newPassword = document.getElementById('new-password').value;
-             const confirmPassword = document.getElementById('confirm-password').value;
-             
-             if (newPassword !== confirmPassword) {
-                 alert('Error: La nueva contraseña y la confirmación no coinciden.');
-                 return;
-             }
-             if (newPassword.length < 6) {
-                 alert('Error: La nueva contraseña debe tener al menos 6 caracteres.');
-                 return;
-             }
-             
-             try {
-                 const response = await fetch(`${API_BASE_URL}auth_handler.php`, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ 
-                         action: 'change_password', 
-                         current_password: currentPassword, 
-                         new_password: newPassword 
-                     })
-                 });
-                 
-                 const result = await response.json();
-
-                 if (result.status === 'success') {
-                     alert('¡Contraseña cambiada con éxito! Serás redirigido para iniciar sesión de nuevo.');
-                     logoutUser(event); // Fuerza el logout para que inicie sesión con la nueva contraseña
-                 } else {
-                     alert('Error al cambiar la contraseña: ' + (result.message || 'Error desconocido.'));
-                 }
-             } catch (error) {
-                 console.error("Error en la petición de cambio de contraseña:", error);
-                 alert('Error de conexión o servidor.');
-             }
-        }
 
 
-        async function loadModule(moduleName) {
-            if (moduleName === 'dashboard') {
+        async function loadModule(moduleName, params = []) {
+            if (!await checkSession()) return; // Re-check session before loading
+
+            if (moduleName.startsWith('noticias/detalle')) {
+                const id = params[0];
+                await renderNoticias(id); // Llama a renderNoticiaDetalle internamente
+            } else if (moduleName === 'dashboard') {
                 await renderDashboard();
             } else if (moduleName === 'slideshow-manager') {
                 await renderSlideshowManager();
             } else if (moduleName === 'directorio') {
                 await renderDirectorio();
-            }
-            else if (moduleName === 'perfil') {
-                await renderProfile(); // Cargar la nueva función de perfil
+            } else if (moduleName === 'noticias') {
+                await renderNoticias();
+            } else if (moduleName === 'perfil') {
+                await renderProfile();
             }
             else {
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm"><h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${moduleName.replace(/-/g, ' ')}</h2><p class="text-gray-600">El contenido del módulo '${moduleName}' se cargará aquí...</p></div>`;
             }
-            // Aseguramos que los menús móviles y desplegables se cierren al cambiar de módulo
             document.getElementById('mobile-menu').classList.add('hidden');
             document.getElementById('mobile-menu-open-icon').classList.remove('hidden');
             document.getElementById('mobile-menu-close-icon').classList.add('hidden');
         }
 
         function setActiveLink(moduleName) {
-            // Limpia todos los enlaces principales
             document.querySelectorAll('nav .nav-link, nav .nav-link-parent').forEach(l => {
                 l.classList.remove('border-[#0b4d9a]', 'text-gray-900', 'font-semibold');
                 l.classList.add('border-transparent', 'text-[#87898d]');
             });
-             // Limpia todos los enlaces móviles
              document.querySelectorAll('#mobile-menu .nav-link').forEach(l => {
                  l.classList.remove('bg-blue-50', 'border-[#0b4d9a]', 'text-[#0b4d9a]');
                  l.classList.add('border-transparent', 'text-gray-600');
              });
 
-            const activeLink = document.querySelector(`.nav-link[href="#${moduleName}"]`);
+            // Si es un detalle, activamos el padre
+            const baseModule = moduleName.split('/')[0];
+
+            const activeLink = document.querySelector(`.nav-link[href="#${baseModule}"]`);
             if (activeLink) {
                 const parentNav = activeLink.closest('nav');
                 if (parentNav) {
-                    // Estilo para enlaces principales de escritorio
                     activeLink.classList.add('border-[#0b4d9a]', 'text-gray-900', 'font-semibold');
                     activeLink.classList.remove('border-transparent', 'text-[#87898d]');
                 }
                 const parentDropdown = activeLink.closest('.hidden.absolute');
                 if (parentDropdown) {
-                    // Si está en un Mega Menú, resalta el botón padre
                     const menuId = parentDropdown.id;
                     const button = document.querySelector(`button[onclick="toggleMenu('${menuId}')"]`);
                     button?.classList.add('text-gray-900', 'font-semibold');
                 }
-                 const mobileLink = document.querySelector(`#mobile-menu .nav-link[href="#${moduleName}"]`);
+                 const mobileLink = document.querySelector(`#mobile-menu .nav-link[href="#${baseModule}"]`);
                     if(mobileLink){
-                        // Estilo para enlaces móviles
                         mobileLink.classList.add('bg-blue-50', 'border-[#0b4d9a]', 'text-[#0b4d9a]');
                         mobileLink.classList.remove('border-transparent', 'text-gray-600');
                     }
             }
         }
 
-        // Listener para los enlaces de navegación
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const module = e.currentTarget.getAttribute('href').substring(1);
-                window.location.hash = module;
-                // Cierra los menús desplegables de escritorio
+                const hash = e.currentTarget.getAttribute('href');
+                window.location.hash = hash;
                 ['nosotros-menu', 'herramientas-menu', 'user-menu'].forEach(id => {
                     document.getElementById(id)?.classList.add('hidden');
                 });
             });
         });
 
-        // Manejador de cambio de hash para navegación
         async function handleHashChange() {
-            // 1. Verificar sesión primero
-            await checkSession();
+            const hash = window.location.hash.substring(1) || 'dashboard';
+            const parts = hash.split('/');
+            const module = parts[0];
+            const params = parts.slice(1);
             
-            // 2. Si no está autenticado, la función checkSession redirigirá a login.html
-            if (!USER.isAuthenticated && window.location.hash !== '#dashboard') return;
-            
-            // 3. Actualizar la UI (nombres, perfiles, visibilidad de enlaces)
-            updateUIBasedOnAuth();
-
-            // 4. Cargar el módulo
-            const module = window.location.hash.substring(1) || 'dashboard';
-            await loadModule(module);
+            await loadModule(module, params);
             setActiveLink(module);
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        window.addEventListener('DOMContentLoaded', handleHashChange);
+        
+        // --- DATOS MOCK (Para módulos aún no conectados) ---
+        const mockEventsData = [
+            { date: '24 Oct', name: 'Reunión General Trimestral' },
+            { date: '28 Oct', name: 'Cumpleaños de Ana Sofía' },
+            { date: '02 Nov', name: 'Día de Muertos (No Laboral)' },
+        ];
     </script>
 </body>
 </html>
