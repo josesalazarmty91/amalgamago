@@ -1,11 +1,14 @@
 <?php
 // Archivo: api/slideshow_handler.php
-// Descripción: Gestiona las peticiones relacionadas con los slides (CRUD).
+// Descripción: Gestiona las peticiones relacionadas con los slides (CRUD) con protección de sesión.
+
+// Iniciar sesión para acceder a $_SESSION
+session_start();
 
 header('Content-Type: application/json');
 
 // Incluimos nuestro script de conexión a la base de datos.
-require_once __DIR__ . '/db_connect.php'; //
+require_once __DIR__ . '/db_connect.php'; 
 
 // Definimos la función principal para devolver una respuesta JSON y cerrar la conexión.
 function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
@@ -19,14 +22,28 @@ function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
     die();
 }
 
+// ====================================================================
+// --- VERIFICACIÓN DE PERFIL ---
+// ====================================================================
+$current_profile = $_SESSION['user_profile'] ?? 'invitado'; // Asignamos 'invitado' si no hay sesión
+
+// Chequeamos si el usuario tiene permiso para MODIFICAR (CRUD que no sea READ)
+$can_modify = in_array($current_profile, ['admin_global', 'diseno']);
+
+
 // Obtenemos el método de la petición HTTP
 $method = $_SERVER['REQUEST_METHOD'];
 
+
 // ====================================================================
 // --- LÓGICA DE LECTURA (READ) ---
+// La lectura está permitida para CUALQUIER usuario (incluyendo invitados)
 // ====================================================================
 if ($method === 'GET') {
-    $sql = "SELECT id, titulo, descripcion, imagen_url, fecha_creacion FROM slideshow ORDER BY id DESC";
+    // Si no es un admin, solo devolvemos los campos esenciales (seguridad por si acaso)
+    $sql_select_fields = "id, titulo, descripcion, imagen_url, fecha_creacion";
+    $sql = "SELECT $sql_select_fields FROM slideshow ORDER BY id DESC";
+
     $result = $conn->query($sql);
 
     if ($result) {
@@ -43,6 +60,11 @@ if ($method === 'GET') {
 // --- LÓGICA DE MODIFICACIÓN (CREATE, UPDATE, DELETE) ---
 // ====================================================================
 else {
+    // 1. Verificar si el usuario puede modificar
+    if (!$can_modify) {
+        sendResponse($conn, 'error', 'Acceso denegado. Se requiere el perfil de Administrador Global o Diseño para modificar slides.', null, 403);
+    }
+
     // Leemos el contenido de la petición (debe ser JSON)
     $input = file_get_contents("php://input");
     $data = json_decode($input, true);
