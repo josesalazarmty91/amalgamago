@@ -221,7 +221,8 @@
                 <h3 class="text-xl font-semibold text-gray-800" id="modal-title">Agregar Nuevo Slide</h3>
             </div>
             <form id="add-slide-form">
-                <input type="hidden" id="slide-edit-index" name="slide-edit-index">
+                <!-- CAMPO ACTUALIZADO: Usamos ID en lugar de índice para la base de datos -->
+                <input type="hidden" id="slide-edit-id" name="slide-edit-id"> 
                 <div class="p-6 space-y-4">
                     <div>
                         <label for="slide-title" class="block text-sm font-medium text-gray-700 mb-1">Título</label>
@@ -385,6 +386,8 @@
                 if (result.status !== 'success') throw new Error(result.message);
                 
                 const slides = result.data;
+                window.slidesData = slides; // Almacenamos los datos globalmente para facilitar la edición.
+                
                 let tableRowsHTML = slides.map(slide => `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3 px-4">
@@ -392,7 +395,7 @@
                         </td>
                         <td class="py-3 px-4 text-sm text-gray-700 font-medium">${slide.titulo}</td>
                         <td class="py-3 px-4">
-                            <button onclick="editSlide(${slide.id}, this)" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
+                            <button onclick="editSlide(${slide.id})" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
                             <button onclick="deleteSlide(${slide.id})" class="ml-4 text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
                         </td>
                     </tr>
@@ -519,9 +522,25 @@
             displayEmployees(filteredEmployees);
         }
         
-        function openAddSlideModal() {
-            document.getElementById('add-slide-form').reset();
-            document.getElementById('modal-title').innerText = 'Agregar Nuevo Slide';
+        /**
+         * Abre el modal, rellenando con datos si se está editando un slide existente.
+         * @param {Object} slideData - Los datos del slide a editar (opcional).
+         */
+        function openAddSlideModal(slideData = null) {
+            const form = document.getElementById('add-slide-form');
+            form.reset();
+            
+            if (slideData) {
+                document.getElementById('modal-title').innerText = 'Editar Slide Existente';
+                document.getElementById('slide-edit-id').value = slideData.id;
+                document.getElementById('slide-title').value = slideData.titulo;
+                document.getElementById('slide-description').value = slideData.descripcion;
+                document.getElementById('slide-image-url').value = slideData.imagen_url;
+            } else {
+                document.getElementById('modal-title').innerText = 'Agregar Nuevo Slide';
+                document.getElementById('slide-edit-id').value = ''; 
+            }
+
             const modal = document.getElementById('add-slide-modal');
             modal.classList.remove('hidden');
             modal.classList.add('modal-enter-active');
@@ -534,10 +553,102 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
         
-        function handleSaveSlide(event) {
+        /**
+         * Maneja el envío del formulario para crear o actualizar un slide.
+         * @param {Event} event - El evento de envío del formulario.
+         */
+        async function handleSaveSlide(event) {
             event.preventDefault();
-            console.log("Guardando slide... (funcionalidad de envío a la API pendiente)");
-            closeAddSlideModal();
+            const form = event.target;
+            const id = form.querySelector('#slide-edit-id').value;
+            const title = form.querySelector('#slide-title').value;
+            const description = form.querySelector('#slide-description').value;
+            const imageUrl = form.querySelector('#slide-image-url').value;
+
+            const action = id ? 'update' : 'create';
+            const method = 'POST';
+            
+            // Creamos el cuerpo de la petición JSON
+            const body = JSON.stringify({
+                action: action,
+                id: id ? parseInt(id) : null,
+                title: title,
+                description: description,
+                'image-url': imageUrl
+            });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}slideshow_handler.php`, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                });
+                
+                // Si la respuesta no es OK, aún debemos intentar leer el JSON para el mensaje de error del PHP
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // Usamos alert temporalmente, idealmente sería un mensaje flotante más estético
+                    alert(`Slide ${action === 'create' ? 'creado' : 'actualizado'} con éxito!`);
+                    closeAddSlideModal();
+                    // Recargar el módulo para ver los cambios
+                    renderSlideshowManager(); 
+                } else {
+                    alert('Error al guardar el slide: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de guardado:", error);
+                alert('Error de conexión o servidor.');
+            }
+        }
+
+        /**
+         * Prepara el modal para editar un slide.
+         * @param {number} id - El ID del slide a editar.
+         */
+        function editSlide(id) {
+            if (!window.slidesData) {
+                console.error("Datos de slides no cargados.");
+                return;
+            }
+            const slideToEdit = window.slidesData.find(slide => parseInt(slide.id) === id);
+            if (slideToEdit) {
+                openAddSlideModal(slideToEdit);
+            } else {
+                alert('Error: Slide no encontrado.');
+            }
+        }
+
+        /**
+         * Elimina un slide mediante una petición al backend.
+         * @param {number} id - El ID del slide a eliminar.
+         */
+        async function deleteSlide(id) {
+            // Usamos alert temporalmente, idealmente sería un modal de confirmación más estético
+            if (!confirm('¿Estás seguro de que quieres eliminar este slide? Esta acción es irreversible.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}slideshow_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Slide eliminado con éxito!');
+                    // Recargar el módulo para ver los cambios
+                    renderSlideshowManager();
+                } else {
+                    alert('Error al eliminar el slide: ' + result.message);
+                }
+            } catch (error) {
+                console.error("Error en la petición de eliminación:", error);
+                alert('Error de conexión o servidor.');
+            }
         }
 
         function changeSlide(direction) {
@@ -548,17 +659,6 @@
             window.currentSlideIndex = (window.currentSlideIndex + direction + window.totalSlides) % window.totalSlides;
             slides[window.currentSlideIndex].classList.remove('opacity-0');
             slides[window.currentSlideIndex].classList.add('opacity-100');
-        }
-
-        function editSlide(id, element) {
-            console.log(`Editando slide con ID: ${id}. (funcionalidad pendiente)`);
-            const row = element.closest('tr');
-            const title = row.children[1].innerText;
-            console.log(`Abriendo editor para: "${title}"`);
-        }
-
-        function deleteSlide(id) {
-            console.log(`Eliminando slide con ID: ${id}. (funcionalidad pendiente)`);
         }
 
         async function loadModule(moduleName) {
@@ -572,16 +672,19 @@
             else {
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm"><h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${moduleName.replace(/-/g, ' ')}</h2><p class="text-gray-600">El contenido del módulo '${moduleName}' se cargará aquí...</p></div>`;
             }
+            // Aseguramos que los menús móviles y desplegables se cierren al cambiar de módulo
             document.getElementById('mobile-menu').classList.add('hidden');
             document.getElementById('mobile-menu-open-icon').classList.remove('hidden');
             document.getElementById('mobile-menu-close-icon').classList.add('hidden');
         }
 
         function setActiveLink(moduleName) {
+            // Limpia todos los enlaces principales
             document.querySelectorAll('nav .nav-link, nav .nav-link-parent').forEach(l => {
                 l.classList.remove('border-[#0b4d9a]', 'text-gray-900', 'font-semibold');
                 l.classList.add('border-transparent', 'text-[#87898d]');
             });
+             // Limpia todos los enlaces móviles
              document.querySelectorAll('#mobile-menu .nav-link').forEach(l => {
                  l.classList.remove('bg-blue-50', 'border-[#0b4d9a]', 'text-[#0b4d9a]');
                  l.classList.add('border-transparent', 'text-gray-600');
@@ -591,34 +694,40 @@
             if (activeLink) {
                 const parentNav = activeLink.closest('nav');
                 if (parentNav) {
+                    // Estilo para enlaces principales de escritorio
                     activeLink.classList.add('border-[#0b4d9a]', 'text-gray-900', 'font-semibold');
                     activeLink.classList.remove('border-transparent', 'text-[#87898d]');
                 }
                 const parentDropdown = activeLink.closest('.hidden.absolute');
                 if (parentDropdown) {
+                    // Si está en un Mega Menú, resalta el botón padre
                     const menuId = parentDropdown.id;
                     const button = document.querySelector(`button[onclick="toggleMenu('${menuId}')"]`);
                     button?.classList.add('text-gray-900', 'font-semibold');
                 }
                  const mobileLink = document.querySelector(`#mobile-menu .nav-link[href="#${moduleName}"]`);
                     if(mobileLink){
+                        // Estilo para enlaces móviles
                         mobileLink.classList.add('bg-blue-50', 'border-[#0b4d9a]', 'text-[#0b4d9a]');
                         mobileLink.classList.remove('border-transparent', 'text-gray-600');
                     }
             }
         }
 
+        // Listener para los enlaces de navegación
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const module = e.currentTarget.getAttribute('href').substring(1);
                 window.location.hash = module;
+                // Cierra los menús desplegables de escritorio
                 ['nosotros-menu', 'herramientas-menu', 'user-menu'].forEach(id => {
                     document.getElementById(id)?.classList.add('hidden');
                 });
             });
         });
 
+        // Manejador de cambio de hash para navegación
         async function handleHashChange() {
             const module = window.location.hash.substring(1) || 'dashboard';
             await loadModule(module);
@@ -630,4 +739,3 @@
     </script>
 </body>
 </html>
-
