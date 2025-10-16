@@ -286,14 +286,6 @@
 
 
         // --- DATOS MOCK (Para módulos aún no conectados) ---
-        const mockEmployeeData = [
-            { id: 1, nombre: 'Ana Sofía Pérez', puesto: 'Directora de Marketing', departamento: 'Marketing', email: 'ana.perez@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-            { id: 2, nombre: 'Carlos Mendoza', puesto: 'Desarrollador Principal', departamento: 'Tecnología', email: 'carlos.mendoza@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-            { id: 3, nombre: 'Isabela Gutiérrez', puesto: 'Gerente de Proyectos', departamento: 'Tecnología', email: 'isabela.gutierrez@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-            { id: 4, nombre: 'Javier Navarro', puesto: 'Analista Financiero', departamento: 'Finanzas', email: 'javier.navarro@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-            { id: 5, nombre: 'Luisa Hernández', puesto: 'Especialista en RRHH', departamento: 'Recursos Humanos', email: 'luisa.hernandez@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-            { id: 6, nombre: 'Mateo Rojas', puesto: 'Diseñador UI/UX', departamento: 'Marketing', email: 'mateo.rojas@amalgama.com', foto_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&h=256&auto=format&fit=crop,q&a=1' },
-        ];
         const mockNewsData = [
             { title: 'Resultados del Q3 Superan Expectativas', category: 'Finanzas', excerpt: 'El equipo de finanzas reporta un crecimiento del 15%...' },
             { title: 'Próxima Actualización de la Plataforma', category: 'Tecnología', excerpt: 'El equipo de desarrollo lanzará la v2.1 el próximo lunes...' },
@@ -549,57 +541,109 @@
             }
         }
 
-        function renderDirectorio() {
+        async function renderDirectorio() {
              if (!USER.isAuthenticated) {
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-sm text-center"><h2 class="text-2xl font-bold text-red-600">Acceso Restringido</h2><p class="mt-2 text-gray-600">Debes iniciar sesión para ver el Directorio de Empleados.</p></div>`;
                 return;
             }
             
-            // ... (código existente del directorio sin cambios, usa mockEmployeeData)
-            const departments = ['Todos', ...new Set(mockEmployeeData.map(e => e.departamento))];
-            const filterButtonsHTML = departments.map(dept => `
-                <button class="department-filter whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${dept === 'Todos' ? 'bg-[#0b4d9a] text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}" data-department="${dept}">
-                    ${dept}
-                </button>
-            `).join('');
+            mainContent.innerHTML = `<div class="p-8 text-center text-gray-500">Cargando Directorio...</div>`;
+            
+            try {
+                // 1. Obtener la lista de departamentos para los filtros
+                const deptResponse = await fetch(`${API_BASE_URL}directorio_handler.php?action=departments`);
+                const deptResult = await deptResponse.json();
 
-            mainContent.innerHTML = `
-                <div class="space-y-8">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-900">Directorio de Empleados</h1>
-                        <p class="mt-1 text-gray-500">Encuentra a tus compañeros de equipo.</p>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <input type="search" id="employee-search" placeholder="Buscar por nombre..." class="w-full rounded-lg border-gray-300 pl-10 pr-4 py-2 focus:border-[#0b4d9a] focus:ring-[#0b4d9a]">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                if (deptResult.status !== 'success') throw new Error(deptResult.message);
+                
+                const departments = ['Todos', ...deptResult.data];
+                const filterButtonsHTML = departments.map(dept => `
+                    <button class="department-filter whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${dept === 'Todos' ? 'bg-[#0b4d9a] text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}" data-department="${dept}">
+                        ${dept}
+                    </button>
+                `).join('');
+
+                // 2. Renderizar la estructura del Directorio
+                mainContent.innerHTML = `
+                    <div class="space-y-8">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Directorio de Empleados</h1>
+                            <p class="mt-1 text-gray-500">Encuentra a tus compañeros de equipo.</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <input type="search" id="employee-search" placeholder="Buscar por nombre o puesto..." class="w-full rounded-lg border-gray-300 pl-10 pr-4 py-2 focus:border-[#0b4d9a] focus:ring-[#0b4d9a]">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd" /></svg>
+                                </div>
+                            </div>
+                            <div id="department-filters" class="flex items-center gap-2 overflow-x-auto pb-2">
+                                ${filterButtonsHTML}
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 overflow-x-auto pb-2">
-                            ${filterButtonsHTML}
-                        </div>
+
+                        <div id="employee-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                     </div>
+                `;
+                
+                // 3. Obtener y mostrar la lista inicial de empleados
+                await filterEmployees(); 
 
-                    <div id="employee-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-                </div>
-            `;
-            
-            displayEmployees(mockEmployeeData); 
-
-            document.getElementById('employee-search').addEventListener('keyup', filterEmployees);
-            document.querySelectorAll('.department-filter').forEach(button => {
-                button.addEventListener('click', () => {
-                    document.querySelectorAll('.department-filter').forEach(btn => {
-                        btn.classList.remove('bg-[#0b4d9a]', 'text-white');
-                        btn.classList.add('bg-white', 'text-gray-600');
+                // 4. Configurar Event Listeners
+                document.getElementById('employee-search').addEventListener('keyup', filterEmployees);
+                document.querySelectorAll('.department-filter').forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Resaltar el botón activo
+                        document.querySelectorAll('.department-filter').forEach(btn => {
+                            btn.classList.remove('bg-[#0b4d9a]', 'text-white');
+                            btn.classList.add('bg-white', 'text-gray-600');
+                        });
+                        button.classList.add('bg-[#0b4d9a]', 'text-white');
+                        button.classList.remove('bg-white', 'text-gray-600');
+                        // Aplicar filtro
+                        filterEmployees();
                     });
-                    button.classList.add('bg-[#0b4d9a]', 'text-white');
-                    button.classList.remove('bg-white', 'text-gray-600');
-                    filterEmployees();
                 });
-            });
+
+            } catch (error) {
+                console.error("Error al cargar el directorio:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Carga</h3><p class="text-gray-600 mt-2">No se pudo cargar el Directorio. Asegúrate de que la tabla 'empleados' y la API 'directorio_handler.php' estén configuradas correctamente.</p><p class="text-xs text-gray-400 mt-2">Detalle: ${error.message}</p></div>`;
+            }
+        }
+
+        /**
+         * Llama a la API de directorio con los filtros actuales y actualiza la cuadrícula.
+         */
+        async function filterEmployees() {
+            const searchTerm = document.getElementById('employee-search')?.value || '';
+            const activeDepartmentBtn = document.querySelector('.department-filter.bg-\\[\\#0b4d9a\\]');
+            const activeDepartment = activeDepartmentBtn ? activeDepartmentBtn.dataset.department : 'Todos';
+
+            const grid = document.getElementById('employee-grid');
+            if (!grid) return;
+            grid.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">Buscando empleados...</p>';
+
+            try {
+                let url = `${API_BASE_URL}directorio_handler.php?search=${encodeURIComponent(searchTerm)}`;
+                if (activeDepartment !== 'Todos') {
+                    url += `&department=${encodeURIComponent(activeDepartment)}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    displayEmployees(result.data);
+                } else {
+                     grid.innerHTML = `<p class="col-span-full text-center text-red-500 py-10">Error en la API: ${result.message}</p>`;
+                }
+
+            } catch (error) {
+                 grid.innerHTML = `<p class="col-span-full text-center text-red-500 py-10">Error de conexión al cargar datos.</p>`;
+                 console.error("Error en filterEmployees:", error);
+            }
         }
 
         function displayEmployees(employees) {
@@ -612,12 +656,12 @@
             }
 
             grid.innerHTML = employees.map(employee => `
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden text-center transform hover:-translate-y-1 transition-transform duration-300">
-                    <img class="w-28 h-28 rounded-full mx-auto mt-6 border-4 border-white shadow-md" src="${employee.foto_url}" alt="Foto de ${employee.nombre}" onerror="this.onerror=null;this.src='https://placehold.co/112x112/CCCCCC/333333?text=USER'">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden text-center transform hover:shadow-lg transition-all duration-300">
+                    <img class="w-28 h-28 rounded-full mx-auto mt-6 border-4 border-white shadow-md object-cover" src="${employee.foto_url}" alt="Foto de ${employee.nombre}" onerror="this.onerror=null;this.src='https://placehold.co/112x112/CCCCCC/333333?text=USER'">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-gray-900">${employee.nombre}</h3>
-                        <p class="text-sm text-[#f5851f] font-medium">${employee.puesto}</p>
-                        <p class="text-xs text-gray-500 mt-1">${employee.departamento}</p>
+                        <p class="text-sm text-[#0b4d9a] font-medium">${employee.puesto}</p>
+                        <p class="text-xs text-[#f5851f] mt-1">${employee.departamento}</p>
                         <div class="mt-4 border-t pt-4">
                             <a href="mailto:${employee.email}" class="text-sm text-gray-600 hover:text-[#0b4d9a] flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" /></svg>
@@ -629,18 +673,7 @@
             `).join('');
         }
         
-        // --- Lógica de Control ---
-        function filterEmployees() {
-            const searchTerm = document.getElementById('employee-search').value.toLowerCase();
-            const activeDepartmentBtn = document.querySelector('.department-filter.bg-\\[\\#0b4d9a\\]');
-            const activeDepartment = activeDepartmentBtn ? activeDepartmentBtn.dataset.department : 'Todos';
-            const filteredEmployees = mockEmployeeData.filter(employee => {
-                const nameMatch = employee.nombre.toLowerCase().includes(searchTerm);
-                const departmentMatch = activeDepartment === 'Todos' || employee.departamento === activeDepartment;
-                return nameMatch && departmentMatch;
-            });
-            displayEmployees(filteredEmployees);
-        }
+        // --- Lógica de Control (CRUD Slideshow) ---
         
         /**
          * Abre el modal, rellenando con datos si se está editando un slide existente.
@@ -798,7 +831,7 @@
             } else if (moduleName === 'slideshow-manager') {
                 await renderSlideshowManager();
             } else if (moduleName === 'directorio') {
-                renderDirectorio();
+                await renderDirectorio();
             }
             else if (moduleName === 'perfil') {
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm">
@@ -874,7 +907,7 @@
             await checkSession();
             
             // 2. Si no está autenticado, la función checkSession redirigirá a login.html
-            if (!USER.isAuthenticated) return;
+            if (!USER.isAuthenticated && window.location.hash !== '#dashboard') return;
             
             // 3. Actualizar la UI (nombres, perfiles, visibilidad de enlaces)
             updateUIBasedOnAuth();
