@@ -1058,15 +1058,26 @@
                 
                 const categoriesHTML = Object.keys(groupedReports).map(category => {
                     const reportsHTML = groupedReports[category].map(report => `
-                        <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
-                            <div>
-                                <a href="${report.url}" target="_blank" class="text-lg font-semibold text-blue-600 hover:underline">${report.nombre}</a>
-                                <p class="text-sm text-gray-500">${report.descripcion || 'Sin descripción.'}</p>
-                            </div>
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                            <a href="#reportes/view/${report.id}" class="nav-link block p-6">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="font-bold text-xl text-[#0b4d9a] group-hover:text-[#f5851f] transition-colors">${report.nombre}</h3>
+                                        <p class="text-gray-500 text-sm mt-1">${report.descripcion || 'Sin descripción.'}</p>
+                                    </div>
+                                    <div class="text-gray-300 group-hover:text-[#f5851f] transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </a>
                             ${isAdmin ? `
-                            <div class="flex items-center space-x-2">
-                                <button onclick="editReport(${report.id})" class="text-sm font-medium text-gray-500 hover:text-blue-600 p-1">Editar</button>
-                                <button onclick="deleteReport(${report.id})" class="text-sm font-medium text-gray-500 hover:text-red-600 p-1">Eliminar</button>
+                            <div class="bg-gray-50 px-6 py-3 border-t">
+                                <div class="flex items-center justify-end space-x-4">
+                                    <button onclick="editReport(${report.id})" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
+                                    <button onclick="deleteReport(${report.id})" class="text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
+                                </div>
                             </div>
                             ` : ''}
                         </div>
@@ -1074,8 +1085,8 @@
 
                     return `
                         <div class="space-y-4">
-                            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">${category}</h2>
-                            <div class="space-y-3">
+                            <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-[#f5851f] pb-2">${category}</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 ${reportsHTML}
                             </div>
                         </div>
@@ -1107,6 +1118,29 @@
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar el módulo de reportes.</p></div>`;
             }
         }
+        
+        function renderReportViewer(id) {
+            const report = window.allReportsData.find(r => r.id == id);
+            if (!report) {
+                mainContent.innerHTML = `<div class="text-center py-10"><h2 class="text-2xl font-bold text-red-600">Error</h2><p class="text-gray-600">No se pudo encontrar el reporte solicitado.</p><a href="#reportes" class="nav-link mt-4 inline-block bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Volver a la lista</a></div>`;
+                return;
+            }
+
+            mainContent.innerHTML = `
+                <div class="flex flex-col" style="height: calc(100vh - 180px);">
+                    <div class="flex items-center justify-between mb-4 flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900 truncate">${report.nombre}</h1>
+                        <a href="#reportes" class="nav-link bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors flex-shrink-0">
+                            &larr; Volver a la lista
+                        </a>
+                    </div>
+                    <div class="flex-grow w-full h-full">
+                        <iframe src="${report.url}" class="w-full h-full border-2 border-gray-200 rounded-lg shadow-inner" title="${report.nombre}"></iframe>
+                    </div>
+                </div>
+            `;
+        }
+
 
         // --- LÓGICA DE CONTROL ---
 
@@ -1646,7 +1680,10 @@
         async function loadModule(moduleName, params = []) {
             if (!await checkSession()) return;
 
-            if (moduleName.startsWith('noticias/detalle')) {
+            if (moduleName.startsWith('reportes/view')) {
+                const id = params[0];
+                renderReportViewer(id);
+            } else if (moduleName.startsWith('noticias/detalle')) {
                 const id = params[0];
                 await renderNoticias(id);
             } else if (moduleName === 'dashboard') {
@@ -1723,8 +1760,8 @@
             }
             const hash = window.location.hash.substring(1) || 'dashboard';
             const parts = hash.split('/');
-            const module = parts[0];
-            const params = parts.slice(1);
+            const module = parts.length > 1 ? `${parts[0]}/${parts[1]}` : parts[0];
+            const params = parts.slice(2);
             
             await loadModule(module, params);
             setActiveLink(module);
