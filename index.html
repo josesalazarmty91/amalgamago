@@ -35,7 +35,7 @@
         }
         /* Ajuste para que el contenido no se oculte detrás del header fijo y el ticker */
         body {
-            padding-top: 105px; /* Altura del header (69px) + altura del ticker (aprox 36px) */
+            padding-top: 105px; /* Altura del header (69px) + altura del ticker (36px) */
         }
         .modal-enter {
             opacity: 0;
@@ -59,17 +59,10 @@
         #news-ticker-content {
             /* El contenido se duplica con JS para un bucle infinito y suave */
             animation: scroll-left 40s linear infinite;
+            white-space: nowrap; /* Asegura que el contenido no se rompa en varias líneas */
         }
         #news-ticker-container:hover #news-ticker-content {
             animation-play-state: paused;
-        }
-        .news-ticker-item {
-            display: inline-block;
-            padding: 8px 16px;
-        }
-        .news-ticker-item .separator {
-            margin: 0 12px;
-            color: #f5851f; /* Naranja corporativo */
         }
     </style>
 </head>
@@ -233,12 +226,16 @@
             </div>
         </header>
 
-        <!-- Cinta de Noticias Recientes -->
-        <div id="news-ticker-container" class="hidden fixed w-full bg-[#2c3e50] text-white text-sm overflow-hidden whitespace-nowrap z-20" style="top: 69px;">
-            <div id="news-ticker-content" class="inline-block">
-                <!-- JS poblará este contenido -->
+        <!-- Cinta de Noticias Recientes (Ticker) -->
+        <div id="news-ticker-container" class="hidden fixed w-full bg-[#f5851f] text-white text-sm z-20 flex items-center" style="top: 69px; height: 36px;">
+            <span class="bg-black bg-opacity-20 font-bold text-xs uppercase px-4 h-full flex items-center flex-shrink-0">ÚLTIMAS NOTICIAS</span>
+            <div class="w-full h-full overflow-hidden">
+                <div id="news-ticker-content" class="inline-block" style="line-height: 36px;">
+                    <!-- El contenido se poblará dinámicamente con JavaScript -->
+                </div>
             </div>
         </div>
+
 
         <!-- Área de Contenido Dinámico -->
         <main id="main-content" class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -417,7 +414,7 @@
 
         async function loadNewsTicker() {
             try {
-                const response = await fetch(`${API_BASE_URL}noticias_handler.php?limit=7`); // Obtener las 7 noticias más recientes
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php?limit=7`);
                 const result = await response.json();
                 const tickerContainer = document.getElementById('news-ticker-container');
                 const tickerContent = document.getElementById('news-ticker-content');
@@ -426,13 +423,13 @@
 
                 if (result.status === 'success' && result.data.length > 0) {
                     const newsItemsHTML = result.data.map(news => `
-                        <a href="#noticias/detalle/${news.id}" class="news-ticker-item hover:underline">
+                        <a href="#noticias/detalle/${news.id}" class="inline-block px-4 hover:underline">
                             ${news.titulo}
                         </a>
-                    `).join('<span class="separator">&#11042;</span>');
-
-                    // Duplicamos el contenido para asegurar un bucle suave e ininterrumpido
-                    tickerContent.innerHTML = newsItemsHTML + '<span class="separator">&#11042;</span>' + newsItemsHTML;
+                    `).join('<span class="text-white opacity-50 font-light">|</span>');
+                    
+                    // Duplicamos el contenido para un bucle infinito y suave
+                    tickerContent.innerHTML = newsItemsHTML + '<span class="text-white opacity-50 font-light mx-4">|</span>' + newsItemsHTML;
                     
                     tickerContainer.classList.remove('hidden');
                 } else {
@@ -461,7 +458,7 @@
                     return true;
                 } else {
                     // Si no está autenticado, redirigir a login, excepto si ya está en login
-                    if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
+                    if (window.location.pathname.endsWith('login.html') === false) {
                          window.location.href = new URL('login.html', window.location.href).href;
                     }
                     return false;
@@ -469,7 +466,7 @@
             } catch (error) {
                 console.error("Error al verificar la sesión:", error);
                 // Si falla la API, asumimos que no hay sesión por seguridad
-                if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
+                if (window.location.pathname.endsWith('login.html') === false) {
                      window.location.href = new URL('login.html', window.location.href).href;
                 }
                 return false;
@@ -1506,4 +1503,3 @@
     </script>
 </body>
 </html>
-
