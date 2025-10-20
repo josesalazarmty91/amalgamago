@@ -64,6 +64,15 @@
         #news-ticker-container:hover #news-ticker-content {
             animation-play-state: paused;
         }
+        /* Animación para el logo */
+        .logo-img {
+            transition: transform 0.3s ease-in-out, filter 0.3s ease-in-out;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.07));
+        }
+        .logo-img:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
     </style>
 </head>
 <body class="h-full">
@@ -76,12 +85,10 @@
                     <div class="flex items-center space-x-8">
                         <!-- Logo -->
                         <a href="#dashboard" class="flex-shrink-0 flex items-center space-x-2">
-                             <img class="h-8 w-auto" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
+                             <img class="h-14 w-auto logo-img" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
                         </a>
                         <!-- Menú para Escritorio -->
                         <nav class="hidden md:flex h-full items-center space-x-4">
-                            <a href="#dashboard" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
-                            
                             <!-- Botón Menú "Nosotros" -->
                             <div class="relative h-full flex items-center">
                                 <button onclick="toggleMenu('nosotros-menu')" class="nav-link-parent h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700 focus:outline-none">
@@ -202,7 +209,6 @@
             <!-- Menú Móvil -->
             <div id="mobile-menu" class="hidden md:hidden">
                 <div class="pt-2 pb-3 space-y-1">
-                    <a href="#dashboard" class="nav-link block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
                     <a href="#noticias" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Noticias</a>
                     <a href="#directorio" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Directorio</a>
                     <a href="#slideshow-manager" id="slideshow-link-mobile" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hidden">Gestionar Slideshow</a>
