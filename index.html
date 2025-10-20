@@ -384,6 +384,7 @@
             profile: 'invitado', // Posibles valores: 'admin_global', 'diseno', 'usuario', 'invitado'
             photo_url: 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P'
         };
+        let carouselInterval = null; // Global variable to hold the interval ID
 
         // --- Lógica de la Interfaz ---
         function toggleMenu(menuId) {
@@ -567,8 +568,8 @@
                         <div id="dashboard-carousel" class="relative w-full h-96 bg-gray-900 rounded-xl shadow-lg overflow-hidden">
                             ${slidesHTML}
                             ${slides.length > 1 ? `
-                            <button onclick="changeSlide(-1)" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
-                            <button onclick="changeSlide(1)" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></button>
+                            <button onclick="navigateAndResetInterval(-1)" class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
+                            <button onclick="navigateAndResetInterval(1)" class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/60 hover:bg-white/90 text-gray-800 p-2 rounded-full z-10 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg></button>
                             ` : ''}
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -587,6 +588,18 @@
                     </div>`;
                 window.currentSlideIndex = 0;
                 window.totalSlides = slides.length;
+
+                // Clear any existing interval to prevent multiple timers
+                if (window.carouselInterval) {
+                    clearInterval(window.carouselInterval);
+                }
+                
+                // Set up the automatic slide change
+                if (window.totalSlides > 1) {
+                    window.carouselInterval = setInterval(() => {
+                        changeSlide(1);
+                    }, 10000); // Change slide every 10 seconds
+                }
 
             } catch (error) {
                 console.error("Error al cargar el dashboard:", error);
@@ -860,6 +873,65 @@
                 console.error("Error al cargar el detalle de la noticia:", error);
                 mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error al cargar la noticia</h3><p class="text-gray-600 mt-2">No se encontró la noticia solicitada o hubo un error de conexión.</p></div>`;
             }
+        }
+
+        async function renderCultura() {
+            mainContent.innerHTML = `
+                <div class="space-y-12">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Cultura y Valores</h1>
+                        <p class="mt-2 text-lg text-gray-600">Nuestros principios y compromisos que nos guían como empresa.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Misión -->
+                        <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+                            <h2 class="text-2xl font-bold text-[#0b4d9a] mb-4">Misión</h2>
+                            <p class="text-gray-700 leading-relaxed">
+                                Brindar soluciones de transporte de carga regular y especializada, creando una tradición de servicio, cumpliendo con las expectativas del cliente, mediante la correcta utilización de nuestros recursos y el apoyo de nuestro capital humano.
+                            </p>
+                        </div>
+
+                        <!-- Visión -->
+                        <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+                            <h2 class="text-2xl font-bold text-[#0b4d9a] mb-4">Visión</h2>
+                            <p class="text-gray-700 leading-relaxed">
+                                Ser la mejor opción del mercado en carga regular y especializada mediante la optimización e innovación de nuestros sistemas y servicios que garanticen la satisfacción de nuestros clientes, respetando el medio ambiente.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Política de Calidad -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-[#f5851f] mb-4">Política de calidad</h2>
+                        <p class="text-gray-700 leading-relaxed">
+                            Ser una empresa comprometida con la conservación y recuperación de los recursos naturales, mediante la minimización de los impactos y riesgos a la salud y al medio ambiente, a través de la prevención y gestión integral de los residuos, así como también con la seguridad que nos confían nuestros clientes, mediante la implementación de procesos para la reducción de riesgos en la cadena logística, ambos en la búsqueda de la mejora continua y bajo el marco legal correspondiente.
+                        </p>
+                    </div>
+
+                    <!-- Responsabilidad Social -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-[#f5851f] mb-4">Responsabilidad social</h2>
+                        <p class="text-gray-700 leading-relaxed">
+                            Como parte de nuestra responsabilidad social, desde hace 4 años estamos involucrados en la certificación SARI; la cual busca el cuidado y crecimiento de nuestro personal, así como los aspectos relacionados al medio ambiente, seguridad e higiene; también por 4 años consecutivos hemos sido reconocidos como empresa de excelencia en el reconocimiento de TRANSPORTE LIMPIO, por nuestras buenas prácticas operativas.
+                        </p>
+                    </div>
+
+                    <!-- Certificaciones -->
+                    <div class="bg-white p-8 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-[#f5851f] mb-4">Certificaciones</h2>
+                        <p class="text-gray-700 leading-relaxed mb-6">
+                            El gran compromiso que brindamos hacia nuestros clientes, siempre está respaldado con una constante mejora de nuestro servicio, por ello nuestras certificaciones nos avalan.
+                        </p>
+                        <div class="flex flex-wrap items-center justify-center gap-8">
+                            <img src="https://placehold.co/150x80/E2E8F0/A0AEC0?text=SARI" alt="Certificación SARI" class="h-20">
+                            <img src="https://placehold.co/150x80/E2E8F0/A0AEC0?text=Transporte+Limpio" alt="Certificación Transporte Limpio" class="h-20">
+                            <img src="https://placehold.co/150x80/E2E8F0/A0AEC0?text=ISO+9001" alt="Certificación ISO 9001" class="h-20">
+                            <img src="https://placehold.co/150x80/E2E8F0/A0AEC0?text=C-TPAT" alt="Certificación C-TPAT" class="h-20">
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
 
@@ -1399,12 +1471,24 @@
 
         function changeSlide(direction) {
             const slides = document.querySelectorAll('.carousel-item');
-            if(slides.length === 0) return;
+            if (slides.length === 0) return;
             slides[window.currentSlideIndex].classList.remove('opacity-100');
             slides[window.currentSlideIndex].classList.add('opacity-0');
             window.currentSlideIndex = (window.currentSlideIndex + direction + window.totalSlides) % window.totalSlides;
             slides[window.currentSlideIndex].classList.remove('opacity-0');
             slides[window.currentSlideIndex].classList.add('opacity-100');
+        }
+
+        function navigateAndResetInterval(direction) {
+            changeSlide(direction);
+            if (window.carouselInterval) {
+                clearInterval(window.carouselInterval);
+            }
+            if (window.totalSlides > 1) {
+                window.carouselInterval = setInterval(() => {
+                    changeSlide(1);
+                }, 10000);
+            }
         }
 
 
@@ -1422,6 +1506,8 @@
                 await renderDirectorio();
             } else if (moduleName === 'noticias') {
                 await renderNoticias();
+            } else if (moduleName === 'cultura') {
+                await renderCultura();
             } else if (moduleName === 'perfil') {
                 await renderProfile();
             }
@@ -1479,6 +1565,11 @@
         });
 
         async function handleHashChange() {
+            // Clear carousel interval when navigating away
+            if (window.carouselInterval) {
+                clearInterval(window.carouselInterval);
+                window.carouselInterval = null;
+            }
             const hash = window.location.hash.substring(1) || 'dashboard';
             const parts = hash.split('/');
             const module = parts[0];
@@ -1503,3 +1594,4 @@
     </script>
 </body>
 </html>
+
