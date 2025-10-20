@@ -31,7 +31,7 @@
         }
         /* Transición suave para el carrusel y los modales */
         .carousel-item, .modal-transition {
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
         }
         /* Ajuste para que el contenido no se oculte detrás del header fijo y el ticker */
         body {
@@ -39,17 +39,15 @@
         }
         .modal-enter {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: scale(0.95) translateY(-10px);
         }
         .modal-enter-active {
             opacity: 1;
-            transform: translateY(0);
-            transition: opacity 300ms, transform 300ms;
+            transform: scale(1) translateY(0);
         }
         .modal-leave-active {
             opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 300ms, transform 300ms;
+            transform: scale(0.95) translateY(-10px);
         }
         /* Animación para el Ticker de Noticias */
         @keyframes scroll-left {
@@ -64,15 +62,6 @@
         #news-ticker-container:hover #news-ticker-content {
             animation-play-state: paused;
         }
-        /* Animación para el logo */
-        .logo-img {
-            transition: transform 0.3s ease-in-out, filter 0.3s ease-in-out;
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.07));
-        }
-        .logo-img:hover {
-            transform: scale(1.05);
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
     </style>
 </head>
 <body class="h-full">
@@ -85,10 +74,12 @@
                     <div class="flex items-center space-x-8">
                         <!-- Logo -->
                         <a href="#dashboard" class="flex-shrink-0 flex items-center space-x-2">
-                             <img class="h-14 w-auto logo-img" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
+                             <img class="h-8 w-auto" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
                         </a>
                         <!-- Menú para Escritorio -->
                         <nav class="hidden md:flex h-full items-center space-x-4">
+                            <a href="#dashboard" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
+                            
                             <!-- Botón Menú "Nosotros" -->
                             <div class="relative h-full flex items-center">
                                 <button onclick="toggleMenu('nosotros-menu')" class="nav-link-parent h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700 focus:outline-none">
@@ -184,7 +175,7 @@
                             <p class="font-semibold text-gray-900">Gestión Operativa</p>
                             <ul class="mt-4 space-y-3">
                                 <li><a href="#orbita" class="nav-link text-sm text-[#87898d] hover:text-[#0b4d9a] hover:font-medium">Órbita (Proyectos)</a></li>
-                                <li><a href="#reportes" class="nav-link text-sm text-[#87898d] hover:text-[#0b4d9a] hover:font-medium">Generador de Reportes</a></li>
+                                <li><a href="#reportes" class="nav-link text-sm text-[#87898d] hover:text-[#0b4d9a] hover:font-medium">DataVision (Reportes)</a></li>
                             </ul>
                         </div>
                         <div>
@@ -209,6 +200,7 @@
             <!-- Menú Móvil -->
             <div id="mobile-menu" class="hidden md:hidden">
                 <div class="pt-2 pb-3 space-y-1">
+                    <a href="#dashboard" class="nav-link block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
                     <a href="#noticias" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Noticias</a>
                     <a href="#directorio" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Directorio</a>
                     <a href="#slideshow-manager" id="slideshow-link-mobile" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hidden">Gestionar Slideshow</a>
@@ -250,6 +242,47 @@
     </div>
 
     <!-- Modales -->
+    
+    <!-- Modal para Agregar/Editar Reporte -->
+    <div id="add-report-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-transition">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-semibold text-gray-800" id="report-modal-title">Agregar Nuevo Reporte</h3>
+            </div>
+            <form id="add-report-form">
+                <input type="hidden" id="report-edit-id">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label for="report-nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Reporte</label>
+                        <input type="text" id="report-nombre" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label for="report-url" class="block text-sm font-medium text-gray-700 mb-1">URL del Reporte</label>
+                        <input type="url" id="report-url" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                     <div>
+                        <label for="report-descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción (Opcional)</label>
+                        <textarea id="report-descripcion" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]"></textarea>
+                    </div>
+                    <div>
+                        <label for="report-categoria" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                        <input type="text" id="report-categoria" placeholder="Ej: Finanzas, Operaciones, Atención a Clientes" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#0b4d9a] focus:border-[#0b4d9a]" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Permisos de Acceso</label>
+                        <div id="report-permissions" class="space-y-2">
+                            <!-- Checkboxes de perfiles se cargarán aquí -->
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end items-center space-x-3">
+                    <button type="button" onclick="closeReportModal()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">Cancelar</button>
+                    <button type="submit" class="bg-[#0b4d9a] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#083a75] transition-colors shadow-sm">Guardar Reporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Modal para Agregar/Editar Slide -->
     <div id="add-slide-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 modal-transition modal-enter">
@@ -382,15 +415,17 @@
         // --- VARIABLES GLOBALES ---
         const API_BASE_URL = new URL('api/', window.location.href).href; 
         const mainContent = document.getElementById('main-content');
+        const USER_PROFILES = ['admin_global', 'diseno', 'usuario']; // Lista de perfiles para permisos
         let USER = {
             is_authenticated: false,
             id: null,
             name: 'Invitado',
             email: 'invitado@amalgama.com',
-            profile: 'invitado', // Posibles valores: 'admin_global', 'diseno', 'usuario', 'invitado'
+            profile: 'invitado',
             photo_url: 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P'
         };
-        let carouselInterval = null; // Global variable to hold the interval ID
+        let carouselInterval = null;
+        let allReportsData = [];
 
         // --- Lógica de la Interfaz ---
         function toggleMenu(menuId) {
@@ -435,7 +470,6 @@
                         </a>
                     `).join('<span class="text-white opacity-50 font-light">|</span>');
                     
-                    // Duplicamos el contenido para un bucle infinito y suave
                     tickerContent.innerHTML = newsItemsHTML + '<span class="text-white opacity-50 font-light mx-4">|</span>' + newsItemsHTML;
                     
                     tickerContainer.classList.remove('hidden');
@@ -464,7 +498,6 @@
                     loadNewsTicker();
                     return true;
                 } else {
-                    // Si no está autenticado, redirigir a login, excepto si ya está en login
                     if (window.location.pathname.endsWith('login.html') === false) {
                          window.location.href = new URL('login.html', window.location.href).href;
                     }
@@ -472,7 +505,6 @@
                 }
             } catch (error) {
                 console.error("Error al verificar la sesión:", error);
-                // Si falla la API, asumimos que no hay sesión por seguridad
                 if (window.location.pathname.endsWith('login.html') === false) {
                      window.location.href = new URL('login.html', window.location.href).href;
                 }
@@ -481,23 +513,14 @@
         }
 
         function updateUIForUser() {
-            // Actualizar menú de usuario
             document.getElementById('user-name-menu').innerText = USER.name;
             document.getElementById('user-profile-menu').innerText = USER.profile.replace(/_/g, ' ').toUpperCase();
             document.getElementById('user-avatar-nav').src = USER.photo_url;
-
-            // Actualizar menú móvil
             document.getElementById('user-name-mobile').innerText = USER.name;
             document.getElementById('user-email-mobile').innerText = USER.email;
             document.getElementById('user-avatar-mobile').src = USER.photo_url;
             
-            // Lógica de visibilidad por perfil
             const canManageSlideshow = ['admin_global', 'diseno'].includes(USER.profile);
-            const canManageDirectory = ['admin_global'].includes(USER.profile);
-            const canManageNews = ['admin_global'].includes(USER.profile);
-
-
-            // Mostrar/Ocultar Gestión de Slideshow (Nav y Móvil)
             const slideshowLink = document.getElementById('slideshow-link');
             const slideshowLinkMobile = document.getElementById('slideshow-link-mobile');
             if (slideshowLink) slideshowLink.classList.toggle('hidden', !canManageSlideshow);
@@ -509,10 +532,8 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'logout' })
-            }).then(() => {
+            }).finally(() => {
                 window.location.href = new URL('login.html', window.location.href).href;
-            }).catch(() => {
-                 window.location.href = new URL('login.html', window.location.href).href;
             });
         }
 
@@ -521,16 +542,14 @@
 
         async function renderDashboard() {
             try {
-                // Peticiones paralelas para eficiencia
                 const [slidesResponse, newsResponse] = await Promise.all([
                     fetch(`${API_BASE_URL}slideshow_handler.php`),
-                    fetch(`${API_BASE_URL}noticias_handler.php?limit=3`) // Obtenemos solo 3 noticias para el dashboard
+                    fetch(`${API_BASE_URL}noticias_handler.php?limit=3`)
                 ]);
 
                 const slidesResult = await slidesResponse.json();
                 const newsResult = await newsResponse.json();
 
-                // Manejo de Slides
                 let slides = slidesResult.status === 'success' ? slidesResult.data : [];
                 let slidesHTML = slides.length > 0 ? slides.map((slide, index) => `
                     <div class="carousel-item absolute inset-0 ${index === 0 ? 'opacity-100' : 'opacity-0'}" data-index="${index}">
@@ -541,7 +560,6 @@
                         </div>
                     </div>`).join('') : `<div class="bg-gray-800 h-full flex items-center justify-center"><p class="text-white">No hay anuncios para mostrar.</p></div>`;
                 
-                // Manejo de Noticias
                 let newsData = newsResult.status === 'success' ? newsResult.data : [];
                 const newsHTML = newsData.map(item => `
                     <li class="py-3">
@@ -595,21 +613,19 @@
                 window.currentSlideIndex = 0;
                 window.totalSlides = slides.length;
 
-                // Clear any existing interval to prevent multiple timers
                 if (window.carouselInterval) {
                     clearInterval(window.carouselInterval);
                 }
                 
-                // Set up the automatic slide change
                 if (window.totalSlides > 1) {
                     window.carouselInterval = setInterval(() => {
                         changeSlide(1);
-                    }, 10000); // Change slide every 10 seconds
+                    }, 10000);
                 }
 
             } catch (error) {
                 console.error("Error al cargar el dashboard:", error);
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar la información del dashboard. Por favor, revisa tu conexión o contacta a soporte.</p></div>`;
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar la información del dashboard.</p></div>`;
             }
         }
 
@@ -620,7 +636,6 @@
             }
             try {
                 const response = await fetch(`${API_BASE_URL}slideshow_handler.php`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
                 
@@ -665,20 +680,17 @@
                         </div>
                     </div>
                 `;
-                document.getElementById('add-slide-form').removeEventListener('submit', handleSaveSlide); // Prevenir duplicados
                 document.getElementById('add-slide-form').addEventListener('submit', handleSaveSlide);
 
             } catch (error) {
                  console.error("Error al cargar el gestor de slideshow:", error);
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar la información. Por favor, revisa tu conexión o contacta a soporte.</p></div>`;
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar la información.</p></div>`;
             }
         }
 
         async function renderDirectorio() {
             try {
-                // Obtener datos iniciales y la lista completa de departamentos
                 const response = await fetch(`${API_BASE_URL}directorio_handler.php`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
 
@@ -739,13 +751,12 @@
                         filterEmployees();
                     }
                 });
-                 document.getElementById('add-employee-form')?.removeEventListener('submit', handleSaveEmployee);
                  document.getElementById('add-employee-form')?.addEventListener('submit', handleSaveEmployee);
 
 
             } catch (error) {
                 console.error("Error al cargar el directorio:", error);
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar el directorio. Por favor, revisa tu conexión o contacta a soporte.</p></div>`;
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar el directorio.</p></div>`;
             }
         }
 
@@ -798,7 +809,6 @@
                 }
 
                 const response = await fetch(`${API_BASE_URL}noticias_handler.php?limit=100`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
                 
@@ -840,7 +850,6 @@
                         </div>
                     </div>
                 `;
-                 document.getElementById('add-news-form')?.removeEventListener('submit', handleSaveNews);
                  document.getElementById('add-news-form')?.addEventListener('submit', handleSaveNews);
 
             } catch (error) {
@@ -852,7 +861,6 @@
         async function renderNoticiaDetalle(id) {
              try {
                 const response = await fetch(`${API_BASE_URL}noticias_handler.php?id=${id}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
                 
@@ -943,9 +951,7 @@
 
         async function renderProfile() {
             try {
-                // Obtener datos más recientes del usuario
                 const response = await fetch(`${API_BASE_URL}auth_handler.php?action=get_profile`);
-                if (!response.ok) throw new Error("Error fetching profile data");
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -961,7 +967,6 @@
 
             } catch (error) {
                 console.error("Error de conexión al cargar perfil:", error);
-                // No detenemos la ejecución, pero loggeamos el error
             }
 
             mainContent.innerHTML = `
@@ -969,7 +974,6 @@
                     <h1 class="text-3xl font-bold text-gray-900 mb-6">Mi Perfil</h1>
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden p-6 sm:p-8">
                         
-                        <!-- Header de Perfil -->
                         <div class="flex items-center space-x-4 border-b pb-6 mb-6">
                             <img class="w-20 h-20 rounded-full object-cover border-4 border-[#f5851f]" src="${USER.photo_url}" onerror="this.onerror=null; this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';" alt="Foto de perfil">
                             <div>
@@ -979,7 +983,6 @@
                             </div>
                         </div>
 
-                        <!-- Navegación por pestañas -->
                         <div class="border-b border-gray-200">
                             <nav class="flex space-x-4" aria-label="Tabs">
                                 <button type="button" onclick="showProfileTab('general')" id="tab-general" class="tab-button inline-flex items-center px-3 py-2 border-b-2 font-medium text-sm text-[#0b4d9a] border-[#0b4d9a]">
@@ -991,9 +994,7 @@
                             </nav>
                         </div>
                         
-                        <!-- Contenido de las Pestañas -->
                         <div class="mt-8">
-                            <!-- Pestaña General -->
                             <div id="content-general" class="tab-content">
                                 <form id="profile-update-form" class="space-y-6">
                                     <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
@@ -1014,7 +1015,6 @@
                                 </form>
                             </div>
 
-                            <!-- Pestaña Contraseña -->
                             <div id="content-password" class="tab-content hidden">
                                 <form id="password-change-form" class="space-y-6">
                                     <div>
@@ -1040,9 +1040,72 @@
                     </div>
                 </div>
             `;
-            // Añadir event listeners después de renderizar
             document.getElementById('profile-update-form')?.addEventListener('submit', handleProfileUpdate);
             document.getElementById('password-change-form')?.addEventListener('submit', handlePasswordChange);
+        }
+        
+        // --- Reportes Module ---
+        async function renderReportes() {
+            try {
+                const response = await fetch(`${API_BASE_URL}reportes_handler.php`);
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                
+                const groupedReports = result.data;
+                window.allReportsData = Object.values(groupedReports).flat();
+
+                const isAdmin = USER.profile === 'admin_global';
+                
+                const categoriesHTML = Object.keys(groupedReports).map(category => {
+                    const reportsHTML = groupedReports[category].map(report => `
+                        <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
+                            <div>
+                                <a href="${report.url}" target="_blank" class="text-lg font-semibold text-blue-600 hover:underline">${report.nombre}</a>
+                                <p class="text-sm text-gray-500">${report.descripcion || 'Sin descripción.'}</p>
+                            </div>
+                            ${isAdmin ? `
+                            <div class="flex items-center space-x-2">
+                                <button onclick="editReport(${report.id})" class="text-sm font-medium text-gray-500 hover:text-blue-600 p-1">Editar</button>
+                                <button onclick="deleteReport(${report.id})" class="text-sm font-medium text-gray-500 hover:text-red-600 p-1">Eliminar</button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+
+                    return `
+                        <div class="space-y-4">
+                            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2">${category}</h2>
+                            <div class="space-y-3">
+                                ${reportsHTML}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                mainContent.innerHTML = `
+                    <div class="space-y-8">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900">DataVision - Gestor de Reportes</h1>
+                                <p class="mt-1 text-gray-500">Accede a los reportes o gestiona los enlaces y permisos.</p>
+                            </div>
+                            ${isAdmin ? `<button onclick="openReportModal()" class="bg-[#f5851f] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#d9741c] transition-colors shadow-sm flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                                Agregar Reporte
+                            </button>` : ''}
+                        </div>
+                        <div class="space-y-8">
+                            ${Object.keys(groupedReports).length > 0 ? categoriesHTML : '<div class="text-center py-10 text-gray-500 bg-white rounded-lg shadow-sm">No hay reportes disponibles para tu perfil.</div>'}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('add-report-form')?.addEventListener('submit', handleSaveReport);
+
+            } catch(error) {
+                console.error("Error al cargar los reportes:", error);
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm text-center"><h3 class="text-lg font-semibold text-red-600">Error de Conexión</h3><p class="text-gray-600 mt-2">No se pudo cargar el módulo de reportes.</p></div>`;
+            }
         }
 
         // --- LÓGICA DE CONTROL ---
@@ -1082,7 +1145,6 @@
 
                 if (result.status === 'success') {
                     alert('Perfil actualizado con éxito. La página se recargará.');
-                    // Actualizar el estado global y recargar la vista
                     await checkSession(); 
                     renderProfile();
                 } else {
@@ -1120,7 +1182,7 @@
 
                 if (result.status === 'success') {
                     alert('Contraseña actualizada con éxito. Por seguridad, debe iniciar sesión nuevamente.');
-                    logoutUser(); // Forzar logout
+                    logoutUser();
                 } else {
                     alert('Error al cambiar la contraseña: ' + result.message);
                 }
@@ -1136,7 +1198,6 @@
             const activeDepartmentBtn = document.querySelector('.department-filter.bg-\\[\\#0b4d9a\\]');
             const activeDepartment = activeDepartmentBtn ? activeDepartmentBtn.dataset.department : 'Todos';
             
-            // Usamos window.allEmployeesData para filtrar
             const filteredEmployees = window.allEmployeesData.filter(employee => {
                 const searchMatch = (
                     employee.nombre.toLowerCase().includes(searchTerm) ||
@@ -1180,23 +1241,19 @@
             event.preventDefault();
             const form = event.target;
             const id = form.querySelector('#slide-edit-id').value;
-            const title = form.querySelector('#slide-title').value;
-            const description = form.querySelector('#slide-description').value;
-            const imageUrl = form.querySelector('#slide-image-url').value;
-
             const action = id ? 'update' : 'create';
-            const method = 'POST';
+            
             const body = JSON.stringify({
                 action: action,
                 id: id ? parseInt(id) : null,
-                title: title,
-                description: description,
-                'image-url': imageUrl
+                title: form.querySelector('#slide-title').value,
+                description: form.querySelector('#slide-description').value,
+                'image-url': form.querySelector('#slide-image-url').value
             });
 
             try {
                 const response = await fetch(`${API_BASE_URL}slideshow_handler.php`, {
-                    method: method,
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: body
                 });
@@ -1207,21 +1264,16 @@
                     alert(`Slide ${action === 'create' ? 'creado' : 'actualizado'} con éxito!`);
                     closeAddSlideModal();
                     renderSlideshowManager(); 
-                    if (action === 'create') renderDashboard();
+                    renderDashboard();
                 } else {
                     alert('Error al guardar el slide: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de guardado:", error);
                 alert('Error de conexión o servidor.');
             }
         }
 
         function editSlide(id) {
-            if (!window.slidesData) {
-                console.error("Datos de slides no cargados.");
-                return;
-            }
             const slideToEdit = window.slidesData.find(slide => parseInt(slide.id) === id);
             if (slideToEdit) {
                 openAddSlideModal(slideToEdit);
@@ -1231,7 +1283,7 @@
         }
 
         async function deleteSlide(id) {
-            if (!confirm('¿Estás seguro de que quieres eliminar este slide? Esta acción es irreversible.')) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este slide?')) {
                 return;
             }
 
@@ -1252,7 +1304,6 @@
                     alert('Error al eliminar el slide: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de eliminación:", error);
                 alert('Error de conexión o servidor.');
             }
         }
@@ -1323,16 +1374,11 @@
                     alert('Error al guardar el empleado: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de guardado:", error);
                 alert('Error de conexión o servidor.');
             }
         }
 
         function editEmployee(id) {
-            if (!window.allEmployeesData) {
-                console.error("Datos de empleados no cargados.");
-                return;
-            }
             const employeeToEdit = window.allEmployeesData.find(e => parseInt(e.id) === id);
             if (employeeToEdit) {
                 openEmployeeModal(employeeToEdit);
@@ -1342,7 +1388,7 @@
         }
 
         async function deleteEmployee(id) {
-            if (!confirm('¿Estás seguro de que quieres eliminar a este empleado del directorio?')) {
+            if (!confirm('¿Estás seguro de que quieres eliminar a este empleado?')) {
                 return;
             }
 
@@ -1362,7 +1408,6 @@
                     alert('Error al eliminar el empleado: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de eliminación:", error);
                 alert('Error de conexión o servidor.');
             }
         }
@@ -1430,16 +1475,11 @@
                     alert('Error al guardar la noticia: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de guardado:", error);
                 alert('Error de conexión o servidor.');
             }
         }
 
         function editNews(id) {
-            if (!window.noticiasData) {
-                console.error("Datos de noticias no cargados.");
-                return;
-            }
             const newsToEdit = window.noticiasData.find(n => parseInt(n.id) === id);
             if (newsToEdit) {
                 openNewsModal(newsToEdit);
@@ -1449,7 +1489,7 @@
         }
 
         async function deleteNews(id) {
-            if (!confirm('¿Estás seguro de que quieres eliminar esta noticia? Esta acción es irreversible.')) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
                 return;
             }
 
@@ -1470,10 +1510,115 @@
                     alert('Error al eliminar la noticia: ' + result.message);
                 }
             } catch (error) {
-                console.error("Error en la petición de eliminación:", error);
                 alert('Error de conexión o servidor.');
             }
         }
+
+        function openReportModal(reportData = null) {
+            const form = document.getElementById('add-report-form');
+            form.reset();
+            const permissionsContainer = document.getElementById('report-permissions');
+            permissionsContainer.innerHTML = USER_PROFILES.map(profile => `
+                <label class="flex items-center">
+                    <input type="checkbox" name="profiles" value="${profile}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="ml-2 text-gray-700 capitalize">${profile.replace(/_/g, ' ')}</span>
+                </label>
+            `).join('');
+            
+            if (reportData) {
+                document.getElementById('report-modal-title').innerText = 'Editar Reporte';
+                document.getElementById('report-edit-id').value = reportData.id;
+                document.getElementById('report-nombre').value = reportData.nombre;
+                document.getElementById('report-url').value = reportData.url;
+                document.getElementById('report-descripcion').value = reportData.descripcion;
+                document.getElementById('report-categoria').value = reportData.categoria;
+                const allowed = JSON.parse(reportData.allowed_profiles);
+                allowed.forEach(profile => {
+                    const checkbox = permissionsContainer.querySelector(`input[value="${profile}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            } else {
+                document.getElementById('report-modal-title').innerText = 'Agregar Nuevo Reporte';
+                document.getElementById('report-edit-id').value = ''; 
+            }
+
+            const modal = document.getElementById('add-report-modal');
+            modal.classList.remove('hidden', 'modal-leave-active');
+            modal.classList.add('modal-enter-active');
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('add-report-modal');
+            modal.classList.remove('modal-enter-active');
+            modal.classList.add('modal-leave-active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        async function handleSaveReport(event) {
+            event.preventDefault();
+            const form = event.target;
+            const id = form.querySelector('#report-edit-id').value;
+            const action = id ? 'update' : 'create';
+            const selectedProfiles = Array.from(form.querySelectorAll('input[name="profiles"]:checked')).map(cb => cb.value);
+
+            const body = {
+                action: action,
+                id: id ? parseInt(id) : null,
+                nombre: form.querySelector('#report-nombre').value,
+                url: form.querySelector('#report-url').value,
+                descripcion: form.querySelector('#report-descripcion').value,
+                categoria: form.querySelector('#report-categoria').value,
+                allowed_profiles: selectedProfiles
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}reportes_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert(`Reporte ${action === 'create' ? 'creado' : 'actualizado'} con éxito.`);
+                    closeReportModal();
+                    renderReportes();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión al guardar el reporte.');
+            }
+        }
+
+        function editReport(id) {
+            const reportToEdit = window.allReportsData.find(r => r.id == id);
+            if (reportToEdit) {
+                openReportModal(reportToEdit);
+            } else {
+                alert('Error: Reporte no encontrado.');
+            }
+        }
+
+        async function deleteReport(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este reporte?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}reportes_handler.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('Reporte eliminado.');
+                    renderReportes();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error de conexión al eliminar el reporte.');
+            }
+        }
+
 
         function changeSlide(direction) {
             const slides = document.querySelectorAll('.carousel-item');
@@ -1499,11 +1644,11 @@
 
 
         async function loadModule(moduleName, params = []) {
-            if (!await checkSession()) return; // Re-check session before loading
+            if (!await checkSession()) return;
 
             if (moduleName.startsWith('noticias/detalle')) {
                 const id = params[0];
-                await renderNoticias(id); // Llama a renderNoticiaDetalle internamente
+                await renderNoticias(id);
             } else if (moduleName === 'dashboard') {
                 await renderDashboard();
             } else if (moduleName === 'slideshow-manager') {
@@ -1514,6 +1659,8 @@
                 await renderNoticias();
             } else if (moduleName === 'cultura') {
                 await renderCultura();
+            } else if (moduleName === 'reportes') {
+                await renderReportes();
             } else if (moduleName === 'perfil') {
                 await renderProfile();
             }
@@ -1535,7 +1682,6 @@
                  l.classList.add('border-transparent', 'text-gray-600');
              });
 
-            // Si es un detalle, activamos el padre
             const baseModule = moduleName.split('/')[0];
 
             const activeLink = document.querySelector(`.nav-link[href="#${baseModule}"]`);
@@ -1571,7 +1717,6 @@
         });
 
         async function handleHashChange() {
-            // Clear carousel interval when navigating away
             if (window.carouselInterval) {
                 clearInterval(window.carouselInterval);
                 window.carouselInterval = null;
@@ -1587,11 +1732,8 @@
 
         window.addEventListener('hashchange', handleHashChange);
         
-        // --- INICIALIZACIÓN ---
-        // Se asegura que todo el HTML esté cargado antes de ejecutar el script de arranque.
         document.addEventListener('DOMContentLoaded', handleHashChange);
 
-        // --- DATOS MOCK (Para módulos aún no conectados) ---
         const mockEventsData = [
             { date: '24 Oct', name: 'Reunión General Trimestral' },
             { date: '28 Oct', name: 'Cumpleaños de Ana Sofía' },
