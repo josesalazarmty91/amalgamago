@@ -33,9 +33,9 @@
         .carousel-item, .modal-transition {
             transition: opacity 0.3s ease-in-out;
         }
-        /* Ajuste para que el contenido no se oculte detrás del header fijo */
+        /* Ajuste para que el contenido no se oculte detrás del header fijo y el ticker */
         body {
-            padding-top: 69px; /* Altura del header (64px) + borde inferior (1px) + borde superior (4px) */
+            padding-top: 105px; /* Altura del header (69px) + altura del ticker (aprox 36px) */
         }
         .modal-enter {
             opacity: 0;
@@ -51,9 +51,29 @@
             transform: translateY(-20px);
             transition: opacity 300ms, transform 300ms;
         }
+        /* Animación para el Ticker de Noticias */
+        @keyframes scroll-left {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        #news-ticker-content {
+            /* El contenido se duplica con JS para un bucle infinito y suave */
+            animation: scroll-left 40s linear infinite;
+        }
+        #news-ticker-container:hover #news-ticker-content {
+            animation-play-state: paused;
+        }
+        .news-ticker-item {
+            display: inline-block;
+            padding: 8px 16px;
+        }
+        .news-ticker-item .separator {
+            margin: 0 12px;
+            color: #f5851f; /* Naranja corporativo */
+        }
     </style>
 </head>
-<body class="h-full" onload="handleHashChange()">
+<body class="h-full">
     <div class="min-h-full">
         <!-- Barra de Navegación Superior con Branding Corporativo -->
         <header class="bg-white fixed w-full top-0 z-30 shadow-sm border-b border-gray-200 border-t-4 border-[#f5851f]">
@@ -213,6 +233,13 @@
             </div>
         </header>
 
+        <!-- Cinta de Noticias Recientes -->
+        <div id="news-ticker-container" class="hidden fixed w-full bg-[#2c3e50] text-white text-sm overflow-hidden whitespace-nowrap z-20" style="top: 69px;">
+            <div id="news-ticker-content" class="inline-block">
+                <!-- JS poblará este contenido -->
+            </div>
+        </div>
+
         <!-- Área de Contenido Dinámico -->
         <main id="main-content" class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
             <!-- El contenido de los módulos se cargará aquí -->
@@ -350,7 +377,7 @@
 
     <script>
         // --- VARIABLES GLOBALES ---
-        const API_BASE_URL = 'api/'; 
+        const API_BASE_URL = new URL('api/', window.location.href).href; 
         const mainContent = document.getElementById('main-content');
         let USER = {
             is_authenticated: false,
@@ -388,6 +415,35 @@
 
         // --- AUTENTICACIÓN Y PERFILES ---
 
+        async function loadNewsTicker() {
+            try {
+                const response = await fetch(`${API_BASE_URL}noticias_handler.php?limit=7`); // Obtener las 7 noticias más recientes
+                const result = await response.json();
+                const tickerContainer = document.getElementById('news-ticker-container');
+                const tickerContent = document.getElementById('news-ticker-content');
+
+                if (!tickerContainer || !tickerContent) return;
+
+                if (result.status === 'success' && result.data.length > 0) {
+                    const newsItemsHTML = result.data.map(news => `
+                        <a href="#noticias/detalle/${news.id}" class="news-ticker-item hover:underline">
+                            ${news.titulo}
+                        </a>
+                    `).join('<span class="separator">&#11042;</span>');
+
+                    // Duplicamos el contenido para asegurar un bucle suave e ininterrumpido
+                    tickerContent.innerHTML = newsItemsHTML + '<span class="separator">&#11042;</span>' + newsItemsHTML;
+                    
+                    tickerContainer.classList.remove('hidden');
+                } else {
+                    tickerContainer.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error al cargar la cinta de noticias:", error);
+                document.getElementById('news-ticker-container')?.classList.add('hidden');
+            }
+        }
+
         async function checkSession() {
             try {
                 const response = await fetch(`${API_BASE_URL}auth_handler.php?action=check_session`);
@@ -401,11 +457,12 @@
                     USER.profile = result.data.perfil;
                     USER.photo_url = result.data.foto_url || 'https://placehold.co/100x100/A0A0A0/FFFFFF?text=P';
                     updateUIForUser();
+                    loadNewsTicker();
                     return true;
                 } else {
                     // Si no está autenticado, redirigir a login, excepto si ya está en login
                     if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
-                         window.location.href = 'login.html';
+                         window.location.href = new URL('login.html', window.location.href).href;
                     }
                     return false;
                 }
@@ -413,7 +470,7 @@
                 console.error("Error al verificar la sesión:", error);
                 // Si falla la API, asumimos que no hay sesión por seguridad
                 if (window.location.pathname !== '/login.html' && window.location.hash !== '#login') {
-                     window.location.href = 'login.html';
+                     window.location.href = new URL('login.html', window.location.href).href;
                 }
                 return false;
             }
@@ -449,9 +506,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'logout' })
             }).then(() => {
-                window.location.href = 'login.html';
+                window.location.href = new URL('login.html', window.location.href).href;
             }).catch(() => {
-                 window.location.href = 'login.html';
+                 window.location.href = new URL('login.html', window.location.href).href;
             });
         }
 
@@ -1436,6 +1493,10 @@
 
         window.addEventListener('hashchange', handleHashChange);
         
+        // --- INICIALIZACIÓN ---
+        // Se asegura que todo el HTML esté cargado antes de ejecutar el script de arranque.
+        document.addEventListener('DOMContentLoaded', handleHashChange);
+
         // --- DATOS MOCK (Para módulos aún no conectados) ---
         const mockEventsData = [
             { date: '24 Oct', name: 'Reunión General Trimestral' },
@@ -1445,3 +1506,4 @@
     </script>
 </body>
 </html>
+
