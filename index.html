@@ -73,13 +73,11 @@
                     <!-- Sección Izquierda: Logo y Menú Principal -->
                     <div class="flex items-center space-x-8">
                         <!-- Logo -->
-                        <a href="#dashboard" class="flex-shrink-0 flex items-center space-x-2">
-                             <img class="h-8 w-auto" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
+                        <a href="#dashboard" class="flex-shrink-0 flex items-center space-x-2 transition-transform duration-300 hover:scale-110">
+                             <img class="h-10 w-auto" src="https://grupoamalgama.com.mx/imagen/logo.png" alt="Grupo Amalgama Logo">
                         </a>
                         <!-- Menú para Escritorio -->
                         <nav class="hidden md:flex h-full items-center space-x-4">
-                            <a href="#dashboard" class="nav-link h-full flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Dashboard</a>
-                            
                             <!-- Botón Menú "Nosotros" -->
                             <div class="relative h-full flex items-center">
                                 <button onclick="toggleMenu('nosotros-menu')" class="nav-link-parent h-full flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-[#87898d] hover:text-gray-700 focus:outline-none">
@@ -161,9 +159,9 @@
                             </ul>
                         </div>
                         <div class="bg-gray-50 p-6 rounded-lg col-span-1">
-                             <h3 class="font-semibold text-gray-900">Anuncio Destacado</h3>
-                             <p class="mt-2 text-sm text-gray-500">Únete a nuestra próxima jornada de integración este viernes. ¡No te lo pierdas!</p>
-                             <a href="#" class="mt-4 inline-block text-sm font-semibold text-[#f5851f] hover:text-[#d9741c]">Saber más &rarr;</a>
+                             <h3 class="font-semibold text-gray-900">KM0, la ruta digital de nuestras historias</h3>
+                             <p class="mt-2 text-sm text-gray-500">¡Conoce nuestra revista del mes! Deslúmbrate con el nuevo contenido que hemos preparado para ti.</p>
+                             <a href="https://grupoamalgama.com.mx/km0/" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block text-sm font-semibold text-[#f5851f] hover:text-[#d9741c]">Leer ahora &rarr;</a>
                         </div>
                     </div>
                 </div>
@@ -200,7 +198,6 @@
             <!-- Menú Móvil -->
             <div id="mobile-menu" class="hidden md:hidden">
                 <div class="pt-2 pb-3 space-y-1">
-                    <a href="#dashboard" class="nav-link block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Dashboard</a>
                     <a href="#noticias" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Noticias</a>
                     <a href="#directorio" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800">Directorio</a>
                     <a href="#slideshow-manager" id="slideshow-link-mobile" class="nav-link block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hidden">Gestionar Slideshow</a>
@@ -1705,30 +1702,31 @@
 
         async function loadModule(moduleName, params = []) {
             if (!await checkSession()) return;
+            const [baseModule, action] = moduleName.split('/');
 
-            if (moduleName.startsWith('reportes/view')) {
+            if (baseModule === 'reportes' && action === 'view') {
                 const id = params[0];
                 renderReportViewer(id);
-            } else if (moduleName.startsWith('noticias/detalle')) {
+            } else if (baseModule === 'noticias' && action === 'detalle') {
                 const id = params[0];
                 await renderNoticias(id);
-            } else if (moduleName === 'dashboard') {
+            } else if (baseModule === 'dashboard') {
                 await renderDashboard();
-            } else if (moduleName === 'slideshow-manager') {
+            } else if (baseModule === 'slideshow-manager') {
                 await renderSlideshowManager();
-            } else if (moduleName === 'directorio') {
+            } else if (baseModule === 'directorio') {
                 await renderDirectorio();
-            } else if (moduleName === 'noticias') {
+            } else if (baseModule === 'noticias') {
                 await renderNoticias();
-            } else if (moduleName === 'cultura') {
+            } else if (baseModule === 'cultura') {
                 await renderCultura();
-            } else if (moduleName === 'reportes') {
+            } else if (baseModule === 'reportes') {
                 await renderReportes();
-            } else if (moduleName === 'perfil') {
+            } else if (baseModule === 'perfil') {
                 await renderProfile();
             }
             else {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm"><h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${moduleName.replace(/-/g, ' ')}</h2><p class="text-gray-600">El contenido del módulo '${moduleName}' se cargará aquí...</p></div>`;
+                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-sm"><h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${baseModule.replace(/-/g, ' ')}</h2><p class="text-gray-600">El contenido del módulo '${baseModule}' se cargará aquí...</p></div>`;
             }
             document.getElementById('mobile-menu').classList.add('hidden');
             document.getElementById('mobile-menu-open-icon').classList.remove('hidden');
@@ -1789,13 +1787,8 @@
             const module = parts[0];
             const action = parts[1];
             const params = parts.slice(2);
-
-            let fullModuleName = module;
-            if(action) {
-                fullModuleName += `/${action}`;
-            }
             
-            await loadModule(fullModuleName, params);
+            await loadModule(module + (action ? `/${action}` : ''), params);
             setActiveLink(module);
         }
 
@@ -1811,4 +1804,7 @@
     </script>
 </body>
 </html>
+
+
+
 
