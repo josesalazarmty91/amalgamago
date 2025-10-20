@@ -8,7 +8,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/db_connect.php'; 
 
-// Definimos la función principal para devolver una respuesta JSON y cerrar la conexión.
+// Función auxiliar para enviar una respuesta JSON y cerrar la conexión.
 function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
     http_response_code($httpCode);
     $response = ['status' => $status, 'message' => $message];
@@ -16,21 +16,20 @@ function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
         $response['data'] = $data;
     }
     echo json_encode($response);
-    $conn->close();
+    if ($conn) $conn->close();
     die();
 }
 
-// 1. Verificación de Autenticación para acceso total al Directorio (solo lectura para todos, excepto invitados)
+// 1. Verificación de Autenticación
 $isAuthenticated = isset($_SESSION['user_id']);
-$userProfile = $_SESSION['user_profile'] ?? 'invitado';
+$userProfile = $_SESSION['perfil'] ?? 'invitado'; // CORREGIDO: Usar 'perfil'
 $isAdminGlobal = $userProfile === 'admin_global';
 
-if (!$isAuthenticated && $userProfile !== 'invitado') {
-    // Si no está logeado, redirigir es manejado por el frontend, aquí solo denegamos acceso a datos sensibles.
-    // Solo permitimos GETs a usuarios logeados o que al menos puedan ver el slideshow
-}
-if ($userProfile === 'invitado' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
-     sendResponse($conn, 'error', 'Acceso denegado. Se requiere un perfil de usuario para ver el directorio completo.', null, 403);
+if (!$isAuthenticated) {
+    // Si no está logeado, denegar acceso a cualquier método que no sea público
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        sendResponse($conn, 'error', 'Acceso no autorizado.', null, 401);
+    }
 }
 
 // ====================================================================
@@ -38,19 +37,9 @@ if ($userProfile === 'invitado' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
 // ====================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    // Lógica para obtener departamentos (para el filtrado en el frontend)
-    if (isset($_GET['action']) && $_GET['action'] === 'departments') {
-        $sql = "SELECT DISTINCT departamento FROM empleados ORDER BY departamento ASC";
-        $result = $conn->query($sql);
-        if ($result) {
-            $departments = [];
-            while ($row = $result->fetch_assoc()) {
-                $departments[] = $row['departamento'];
-            }
-            sendResponse($conn, 'success', 'Departamentos obtenidos exitosamente.', $departments);
-        } else {
-            sendResponse($conn, 'error', 'Error al obtener departamentos.', null, 500);
-        }
+    // Cualquier usuario autenticado puede ver el directorio
+    if (!$isAuthenticated) {
+        sendResponse($conn, 'error', 'Se requiere autenticación para ver el directorio.', null, 401);
     }
     
     // Lógica para obtener empleado individual (para edición)
@@ -71,47 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
 
-    // Lógica principal para obtener empleados (Filtrado/Búsqueda)
-    $search_term = $_GET['search'] ?? '';
-    $department_filter = $_GET['department'] ?? '';
-
-    // Agregamos 'ubicacion' a la selección
-    $sql = "SELECT id, nombre, puesto, departamento, email, telefono, ubicacion, foto_url FROM empleados";
-    $conditions = [];
-    $params = [];
-    $types = '';
-
-    // Condición de Búsqueda por Texto (nombre, puesto, email)
-    if (!empty($search_term)) {
-        $search_like = '%' . $search_term . '%';
-        $conditions[] = "(nombre LIKE ? OR puesto LIKE ? OR email LIKE ?)";
-        $params[] = $search_like;
-        $params[] = $search_like;
-        $params[] = $search_like;
-        $types .= 'sss';
-    }
-
-    // Condición de Filtrado por Departamento
-    if (!empty($department_filter) && $department_filter !== 'Todos') {
-        $conditions[] = "departamento = ?";
-        $params[] = $department_filter;
-        $types .= 's';
-    }
-
-    if (count($conditions) > 0) {
-        $sql .= " WHERE " . implode(" AND ", $conditions);
-    }
-
-    $sql .= " ORDER BY nombre ASC";
-
-    if (!empty($params)) {
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param($types, ...$params);
-        $stmt->execute();
-        $result = $stmt->get_result();
-    } else {
-        $result = $conn->query($sql);
-    }
+    // Lógica principal para obtener todos los empleados
+    $sql = "SELECT id, nombre, puesto, departamento, email, telefono, ubicacion, foto_url FROM empleados ORDER BY nombre ASC";
+    $result = $conn->query($sql);
 
     if ($result) {
         $employees = [];
@@ -163,7 +114,6 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_id = $stmt->insert_id;
             sendResponse($conn, 'success', 'Empleado creado exitosamente.', ['id' => $new_id]);
         } else {
-            // Verificar error de duplicado (ej. email)
             if ($conn->errno === 1062) {
                 sendResponse($conn, 'error', 'Error: El correo electrónico ya está registrado.', null, 409);
             }
@@ -210,9 +160,9 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     } 
 
-    // --- ACCIÓN INVÁLIDA ---
     else {
         sendResponse($conn, 'error', 'Petición no válida o acción no reconocida.', null, 405);
     }
 }
 ?>
+
