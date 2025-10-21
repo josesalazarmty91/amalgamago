@@ -2,13 +2,16 @@
 // Archivo: api/directorio_handler.php
 // Descripción: Gestiona las peticiones CRUD y de lectura para el Directorio de Empleados.
 
-session_start();
+// Iniciar sesión de forma segura
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/db_connect.php'; 
 
-// Función auxiliar para enviar una respuesta JSON y cerrar la conexión.
+// Definimos la función principal para devolver una respuesta JSON y cerrar la conexión.
 function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
     http_response_code($httpCode);
     $response = ['status' => $status, 'message' => $message];
@@ -16,52 +19,28 @@ function sendResponse($conn, $status, $message, $data = null, $httpCode = 200) {
         $response['data'] = $data;
     }
     echo json_encode($response);
-    if ($conn) $conn->close();
+    $conn->close();
     die();
 }
 
-// 1. Verificación de Autenticación
+// 1. Verificación de Autenticación y Permisos
 $isAuthenticated = isset($_SESSION['user_id']);
-$userProfile = $_SESSION['perfil'] ?? 'invitado'; // CORREGIDO: Usar 'perfil'
-$isAdminGlobal = $userProfile === 'admin_global';
+$userProfile = $_SESSION['perfil'] ?? 'invitado';
+$isAdminGlobal = ($userProfile === 'admin_global');
 
 if (!$isAuthenticated) {
-    // Si no está logeado, denegar acceso a cualquier método que no sea público
-    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        sendResponse($conn, 'error', 'Acceso no autorizado.', null, 401);
-    }
+    sendResponse($conn, 'error', 'Acceso denegado. Se requiere autenticación.', null, 401);
 }
+
 
 // ====================================================================
 // --- LÓGICA DE LECTURA (READ) y Búsqueda/Filtro (GET) ---
 // ====================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    // Cualquier usuario autenticado puede ver el directorio
-    if (!$isAuthenticated) {
-        sendResponse($conn, 'error', 'Se requiere autenticación para ver el directorio.', null, 401);
-    }
-    
-    // Lógica para obtener empleado individual (para edición)
-    if (isset($_GET['action']) && $_GET['action'] === 'get_employee' && isset($_GET['id'])) {
-        $id = (int)$_GET['id'];
-        $stmt = $conn->prepare("SELECT id, nombre, puesto, departamento, email, telefono, ubicacion, foto_url FROM empleados WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $employee = $result->fetch_assoc();
-        $stmt->close();
-
-        if ($employee) {
-            sendResponse($conn, 'success', 'Empleado obtenido exitosamente.', $employee);
-        } else {
-            sendResponse($conn, 'error', 'Empleado no encontrado.', null, 404);
-        }
-    }
-
-
-    // Lógica principal para obtener todos los empleados
+    // Lógica para obtener todos los empleados (el filtrado se hace en el frontend)
     $sql = "SELECT id, nombre, puesto, departamento, email, telefono, ubicacion, foto_url FROM empleados ORDER BY nombre ASC";
+    
     $result = $conn->query($sql);
 
     if ($result) {
@@ -114,6 +93,7 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_id = $stmt->insert_id;
             sendResponse($conn, 'success', 'Empleado creado exitosamente.', ['id' => $new_id]);
         } else {
+            // Verificar error de duplicado (ej. email)
             if ($conn->errno === 1062) {
                 sendResponse($conn, 'error', 'Error: El correo electrónico ya está registrado.', null, 409);
             }
@@ -160,6 +140,7 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
     } 
 
+    // --- ACCIÓN INVÁLIDA ---
     else {
         sendResponse($conn, 'error', 'Petición no válida o acción no reconocida.', null, 405);
     }

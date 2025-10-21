@@ -944,6 +944,60 @@
                 </div>
             `;
         }
+        
+        async function renderHistoria() {
+            const historyData = [
+                { year: '1989', color: 'orange', description: 'Iniciamos Operaciones en Monterrey, N.L. con el fin de mover residuos peligrosos al confinamiento en Mina, N.L.' },
+                { year: '1994', color: 'blue', description: 'El Instituto Nacional de Ecología nos otorga autorización para transportar residuos peligrosos según la NOM-CRP-001-ECOL/93.' },
+                { year: '2005', color: 'orange', description: 'Iniciamos operaciones de servicio local y patio de vacíos de contenedores marítimos, siendo nuestro primer cliente NYK.' },
+                { year: '2013', color: 'blue', description: 'Se construye oficinas y talleres en García, N.L. y ampliamos nuestro patio de maniobras de 15,000 mts² a 30,000 mts². Se moderniza el patio de García y se amplía a 15,000 mts más. Adicionamos un patio en Manzanillo, Col. y nos otorgan la certificación CTPAT.' },
+                { year: '2014', color: 'orange', description: 'Apertura de terminal y patio de maniobras en Manzanillo, Col. en una extensión de 30,000 mts². Nos fue otorgada la constancia por parte de TRANSPORTE LIMPIO.' },
+                { year: '2015', color: 'blue', description: 'Apertura de terminales en Altamira, Tamps. y Guadalajara, Jal. Certificados por la ANIQ, otorgándonos la certificación SARI.' },
+                { year: '2016', color: 'orange', description: 'Se crea REFLEMSA, empresa hermana de Genesis, dedicada al servicio de carga LTL desde y hacia los principales puertos del país.' },
+                { year: '2017', color: 'blue', description: 'Inicio de operaciones de transbordo por Laredo, TX.' },
+                { year: '2019', color: 'orange', description: 'La SCT, nos autoriza como taller autorizado para realizar las verificaciones mecánicas.' }
+            ];
+
+            const timelineHTML = historyData.map((item, index) => {
+                const isOdd = index % 2 !== 0;
+                const textColor = item.color === 'orange' ? 'text-[#f5851f]' : 'text-[#0b4d9a]';
+                const bgColor = item.color === 'orange' ? 'bg-[#f5851f]' : 'bg-[#0b4d9a]';
+                const content = `
+                    <div class="w-5/12">
+                        <div class="p-4 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow border-l-4 ${item.color === 'orange' ? 'border-[#f5851f]' : 'border-[#0b4d9a]'}">
+                            <h3 class="text-2xl font-bold ${textColor}">${item.year}</h3>
+                            <p class="text-gray-600 mt-2 text-sm leading-relaxed">${item.description}</p>
+                        </div>
+                    </div>
+                `;
+
+                return `
+                    <div class="flex justify-between items-center w-full ${isOdd ? 'flex-row-reverse' : ''}">
+                        ${content}
+                        <div class="w-2/12 flex justify-center">
+                            <div class="w-4 h-4 rounded-full ${bgColor} z-10"></div>
+                        </div>
+                        <div class="w-5/12"></div>
+                    </div>
+                `;
+            }).join('');
+
+            mainContent.innerHTML = `
+                <div class="space-y-12">
+                    <div class="text-center">
+                        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">NUESTRA HISTORIA</h1>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                            Creada en 1989 constituyéndose así <strong>AUTO TRANSPORTADORA GENESIS, S.A. DE C.V.</strong> como una empresa orgullosamente mexicana preocupada por respetar el medio ambiente, dándose a la tarea de manejar y transportar adecuadamente residuos peligrosos y no peligrosos, en Nuevo León.
+                        </p>
+                    </div>
+
+                    <div class="relative wrap overflow-hidden p-10 h-full">
+                        <div class="absolute bg-gray-200 h-full" style="left: 50%; width: 4px;"></div>
+                        ${timelineHTML}
+                    </div>
+                </div>
+            `;
+        }
 
 
         async function renderProfile() {
@@ -1720,6 +1774,8 @@
                 await renderNoticias();
             } else if (baseModule === 'cultura') {
                 await renderCultura();
+            } else if (baseModule === 'historia') {
+                await renderHistoria();
             } else if (baseModule === 'reportes') {
                 await renderReportes();
             } else if (baseModule === 'perfil') {
@@ -1804,7 +1860,5 @@
     </script>
 </body>
 </html>
-
-
 
 
