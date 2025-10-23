@@ -16,3 +16,5 @@ define('DB_PASS', 'Cortometraje@3');
 
 // El nombre de la base de datos a la que nos conectaremos.
 define('DB_NAME', 'grupoam6_amalgamago');
+
+
